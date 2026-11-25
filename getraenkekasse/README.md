@@ -1,4 +1,4 @@
-# Bierwart · Getränkekasse 1.10.1
+# Bierwart · Getränkekasse 1.11.0
 
 Die Strichliste läuft auf **einem Rechner im Hausnetz**. Mitglieder, Bierwarte und Kassenwart öffnen sie im Browser. GnuCash kann auf einem anderen Rechner laufen. Der Austausch über die CSV-Assistenten und den Bereich **GnuCash Import / Export** ist ebenfalls verfügbar.
 
@@ -60,6 +60,6 @@ Neue Personen erhalten bei eurem Kontenplan den GnuCash-Typ **LIABILITY** und di
 
 Ein Serverprozess verwaltet den Bestand in `data/db.json`. Belege liegen in `assets/receipts`, Bilder und Produktpreise in `assets/res`. Für eine vollständige Sicherung den Server anhalten und `data`, `assets` sowie `config.json` gemeinsam kopieren. Das Änderungsprotokoll liegt ebenfalls in der JSON-Datei und ist für Personen mit Dateizugriff editierbar.
 
-Bei einem Update die neue Version **separat entpacken**. Den bisherigen Server anhalten, die genannten Ordner und die Konfiguration aus der Sicherung in den neuen Ordner übernehmen und anschließend nur den neuen Server starten. Im Entwurf offen gebliebene alte Buchungsläufe enthalten dessen ursprüngliches CSV-Format. Bereits importierte bestätigen. Noch nicht importierte verwerfen und einen neuen Lauf erzeugen. Das Standardpasswort der früheren Verwaltung wird beim ersten Start durch eine individuelle PIN ersetzt. Der Testbefehl `npm test` arbeitet in einem temporären Testbestand.
+Updates und Rückwechsel erfolgen unter **Verwaltung → Software-Updates**. Die einmalige Einrichtung, der direkte Zugang für ältere Versionen und die Releasedokumentation stehen in [Repository-Updates.md](../Repository-Updates.md). Im Entwurf offen gebliebene alte Buchungsläufe enthalten dessen ursprüngliches CSV-Format. Bereits importierte bestätigen. Noch nicht importierte verwerfen und einen neuen Lauf erzeugen. Das Standardpasswort der früheren Verwaltung wird beim ersten Start durch eine individuelle PIN ersetzt. Der Testbefehl `npm test` arbeitet in einem temporären Testbestand.
 
 Das Transaktionsformat der Vorversion wurde mit GnuCash 5.16 geprüft. Version 1.3 wurde mit GnuCash-XML, der vorhandenen SS26-CSV und einem Konten- und Buchungs-Rundlauf im BW-Programm getestet. Nach einem größeren Versionswechsel zuerst einen kleinen Lauf mit einer Kopie der GnuCash-Datei ausprobieren.

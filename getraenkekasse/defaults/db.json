@@ -1,0 +1,74 @@
+{
+  "accounts": [
+    {
+      "id": "62d32c3e01d8",
+      "name": "XXX-Karte",
+      "isSystem": true,
+      "systemKind": "xxx-card",
+      "priority": false,
+      "roles": {},
+      "createdAt": "2026-07-27T10:43:12.728Z"
+    },
+    {
+      "id": "0e792f2efc74",
+      "name": "Ankneipe",
+      "isEvent": true,
+      "permanent": true,
+      "customDrinks": [],
+      "createdAt": "2026-07-27T10:43:12.729Z",
+      "gnucashAccount": "4 Aufwands- & Ertragskonten:4150 Kneipen"
+    },
+    {
+      "id": "0a8390e99762",
+      "name": "Abkneipe",
+      "isEvent": true,
+      "permanent": true,
+      "customDrinks": [],
+      "createdAt": "2026-07-27T10:43:12.729Z",
+      "gnucashAccount": "4 Aufwands- & Ertragskonten:4150 Kneipen"
+    },
+    {
+      "id": "fd67ba0d2eea",
+      "name": "Stiftungsfest",
+      "isEvent": true,
+      "permanent": true,
+      "customDrinks": [],
+      "createdAt": "2026-07-27T10:43:12.729Z"
+    },
+    {
+      "id": "065cd83f3a6e",
+      "name": "Fuxenkneipe",
+      "isEvent": true,
+      "permanent": true,
+      "customDrinks": [],
+      "createdAt": "2026-07-27T10:43:12.729Z"
+    }
+  ],
+  "transactions": [],
+  "eventKinds": [
+    "Ankneipe",
+    "Abkneipe",
+    "Stiftungsfest",
+    "Fuxenkneipe"
+  ],
+  "activeMeals": [],
+  "auditLog": [],
+  "ledgerEntries": [],
+  "exportRuns": [],
+  "settings": {
+    "xxxCardAccountNumber": "",
+    "xxxCardInternalAccountId": "62d32c3e01d8",
+    "gnucash": {
+      "memberPrefix": "9 Statistik- & Vortragskonten:9999 PERSONENKONTEN:10000-69999 Debitoren",
+      "useMemberPrefix": true,
+      "revenueDrinks": "2 Aufwandskonten:2000 Bierwart",
+      "eventAccount": "4 Aufwands- & Ertragskonten",
+      "cashAccount": "1 Bestandskonten:1000-1400 AKTIVE Bestandskonten:1000-1250 Kasse, Bank:1000-1050 Kasse:1050 Nebenkassen (KW, BW)",
+      "bankAccount": "1 Bestandskonten:1000-1400 AKTIVE Bestandskonten:1000-1250 Kasse, Bank:1200-1250 Bank:1200 Sparkasse Girokonto",
+      "expenseAccount": "2 Aufwandskonten:2000 Bierwart",
+      "currency": "EUR",
+      "numberPrefix": "GK"
+    }
+  },
+  "seededEvents": true
+}

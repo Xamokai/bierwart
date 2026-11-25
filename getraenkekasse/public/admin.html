@@ -37,6 +37,7 @@
       <button class="btn" data-tab="bar">Schnapswart</button>
       <button class="btn" data-tab="audit">Änderungsprotokoll</button>
       <button class="btn" data-tab="gnucash">GnuCash Import / Export</button>
+      <a class="btn" href="/updates/">Software-Updates</a>
     </nav>
 
     <!-- Übersicht: Käufe je Konto, gruppiert nach Datum -->
@@ -214,8 +215,8 @@ document.getElementById("pin").addEventListener("keydown", e => { if (e.key === 
 if (pin) tryLogin(pin);
 
 /* Tabs */
-document.querySelectorAll(".tabs .btn").forEach(b => b.onclick = () => {
-  document.querySelectorAll(".tabs .btn").forEach(x => x.removeAttribute("aria-current"));
+document.querySelectorAll(".tabs [data-tab]").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs [data-tab]").forEach(x => x.removeAttribute("aria-current"));
   b.setAttribute("aria-current", "page");
   if (b.dataset.tab === "bar") barManager.refresh();
   ["dash", "accounts", "events", "products", "bar", "audit", "gnucash"].forEach(t =>

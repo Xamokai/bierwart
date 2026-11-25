@@ -1,8 +1,8 @@
-# Bierwart LAN 1.10.1
+# Bierwart LAN 1.11.0
 
 ## Update einspielen
 
-1. Den BW-Server stoppen und den bisherigen Ordner sichern. Das ZIP in einen neuen Ordner entpacken. Die bisherigen Ordner `data`, `assets` und die `config.json` in den neuen Unterordner `getraenkekasse` übernehmen. Dort `npm start` ausführen. Bei einer Neuinstallation steht die LAN-Konfiguration in der [Serveranleitung](getraenkekasse/README.md).
+1. Für den Wechsel von 1.10.1 einmalig die bestehende Kasse übernehmen und die neue Version mit `npm start` starten. Danach unter **Verwaltung → Software-Updates** die Repository-Adresse speichern, nach Updates suchen und die gewünschte Version aktivieren. Die Schritte zur Übernahme, zum Befüllen des Repositories und zum Zurückwechseln stehen in [Repository-Updates.md](Repository-Updates.md).
 2. Für den Abgleich im Browser **Verwaltung → GnuCash Import / Export** öffnen.
 3. Beim ersten Abgleich mit einer neuen Kasse den Kontenbaum in der Vorschau übernehmen. Das geht bereits mit der Verwaltungs-PIN und ohne angelegte Personen. Eine automatisch erzeugte PIN steht auf dem Server in `data/admin-pin`. Bei einer selbst konfigurierten PIN dieselbe wie für die BW-Verwaltung verwenden.
 

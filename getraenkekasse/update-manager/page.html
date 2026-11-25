@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Software-Updates · Bierwart</title><link rel="stylesheet" href="/updates/page.css"><script src="/updates/page.js" defer></script></head>
+<body><header><a href="/admin.html">← Verwaltung</a><h1>Software-Updates</h1></header><main>
+<form id="login" hidden><h2>Verwaltung anmelden</h2><label for="pin">Admin-PIN</label><input id="pin" type="password" autocomplete="current-password" required><button>Anmelden</button></form>
+<div id="panel" hidden><section><h2>Installierte Version</h2><strong id="active"></strong><small id="activeRepo"></small></section>
+<section><h2>Update-Quelle</h2><form id="source"><label for="repo">HTTPS-Adresse des Git-Repositories</label><div class="row"><input class="grow" id="repo" type="url" required placeholder="https://codeberg.org/verein/bierwart.git"><button id="save">Speichern</button></div></form>
+<button id="check" class="accent">Nach Updates suchen</button></section>
+<section><h2>Version wählen</h2><label for="versions">Veröffentlichte und lokal vorhandene Versionen</label><select id="versions"></select><small id="detail"></small><button id="install">Ausgewählte Version aktivieren</button></section></div>
+<p id="message" role="status" aria-live="polite"></p></main></body></html>
