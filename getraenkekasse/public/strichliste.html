@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strichliste – Bierwart</title><link rel="stylesheet" href="style.css">
+</head><body class="kiosk">
+<header class="app"><h1 id="pageTitle">Strichliste</h1>
+  <nav class="pagenav" aria-label="Kasse"><a id="tallyNav" href="strichliste.html" aria-current="page">Strichliste</a>
+    <a id="eventsNav" href="veranstaltung.html">Veranstaltungen</a></nav></header>
+<main>
+  <div class="tally-toolbar">
+    <input id="search" type="search" placeholder="Name suchen …" aria-label="Name suchen">
+    <button class="btn" id="btnNew" disabled>Konto anlegen</button>
+    <button class="btn" id="btnBarCard" hidden>Getränkekarte</button>
+    <button class="btn" id="btnEventDrinks" disabled>Temporäre Getränke</button>
+    <button class="btn gold" id="btnActiveMeal">Aktivenessen anlegen</button>
+  </div>
+  <div class="grid" id="names" aria-label="Konten"></div>
+</main>
+<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html">Mein Konto</a><a href="admin.html">Verwaltung</a></nav>
+
+<dialog class="bw-dialog order-dialog" id="sheet" aria-labelledby="sheetName">
+  <div class="dialog-head"><h2 id="sheetName"></h2><button class="btn small ghost" data-close>Schließen</button></div>
+  <div class="tally" id="sheetTally"></div>
+  <div class="drink-grid" id="sheetProducts"></div>
+  <div class="order-bar"><span>Summe <strong id="sheetSum"></strong></span><div class="order-actions">
+    <button class="btn" id="btnReset">Zurücksetzen</button><button class="btn gold" id="btnBook">Buchen</button>
+  </div></div>
+</dialog>
+<dialog class="bw-dialog compact-dialog" id="newAccount" aria-labelledby="newTitle">
+  <div class="dialog-head"><h2 id="newTitle">Konto anlegen</h2><button class="btn ghost small" data-close>Schließen</button></div>
+  <form class="stack-form"><label>Name<input name="name" maxlength="120" required autocomplete="off"></label>
+    <label>Nachname (Startpasswort)<input name="surname" maxlength="120" required autocomplete="off"></label>
+    <button class="btn gold" type="submit">Konto anlegen</button></form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+<script src="display.js"></script><script src="ui.js"></script><script src="order.js"></script>
+<script src="bar-types.js"></script><script src="bar-card.js"></script><script src="temporary-drinks.js"></script><script src="meal-allocation.js"></script><script src="active-meals.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const eventId = new URLSearchParams(location.search).get("event");
+let accounts = [], shared = [], currentEvent = null, current = null;
+let loadNumber = 0;
+const order = mountOrder({
+  grid:$("sheetProducts"), sum:$("sheetSum"), tally:$("sheetTally"), reset:$("btnReset"), submit:$("btnBook"),
+  book:items => BW.post("/api/purchase", {accountId:current.id, ...(eventId ? {eventId} : {}), items}),
+  onRejected:load,
+  onBooked:async () => { modal.close(); BW.toast("Gebucht für " + current.name + "."); await load(); }
+});
+const modal = BW.dialog($("sheet"), () => !order.busy);
+function openSheet(account) {
+  current = account;
+  order.clear();
+  $("sheetName").textContent = current.name;
+  modal.open();
+}
+function renderNames() {
+  const q = $("search").value.trim().toLocaleLowerCase("de");
+  const list = accounts.filter(a => q ? a.name.toLocaleLowerCase("de").includes(q) : a.priority || a.activeLast24Hours);
+  $("names").replaceChildren();
+  list.forEach(a => {
+    const b = document.createElement("button");
+    b.className = "tile" + (a.priority ? " prio" : "");
+    if (a.priority) b.setAttribute("aria-description", "Priorisiertes Konto");
+    b.textContent = a.name; b.onclick = () => openSheet(a);
+    $("names").append(b);
+  });
+  if (!list.length) {
+    const empty = document.createElement("p"); empty.className = "muted empty-state";
+    empty.textContent = q ? "Kein passendes Konto gefunden." : "Keine priorisierten oder in den letzten 24 Stunden aktiven Konten. Über die Suche findest du alle Namen.";
+    $("names").append(empty);
+  }
+}
+async function load() {
+  const number = ++loadNumber;
+  const [names, products, drinks, events] = await Promise.all([
+    BW.api("/api/tally/accounts" + (eventId ? "?event=" + encodeURIComponent(eventId) : "")),
+    BW.api("/api/products"), BW.api("/api/temporary-drinks"), eventId ? BW.api("/api/events") : []
+  ]);
+  if (number !== loadNumber) return;
+  currentEvent = events.find(e => e.id === eventId && e.mode === "personal") || null;
+  if (eventId && !currentEvent) {
+    accounts = []; $("btnBarCard").hidden = true; $("names").textContent = "Diese Veranstaltung ist nicht mehr verfügbar.";
+    $("btnNew").disabled = $("btnEventDrinks").disabled = true;
+    if (!order.busy) modal.close();
+    throw Error("Diese Veranstaltungsstrichliste ist nicht verfügbar.");
+  }
+  accounts = names; shared = drinks;
+  $("btnBarCard").hidden = !currentEvent;
+  if (currentEvent) $("pageTitle").textContent = currentEvent.name;
+  order.setProducts(products.filter(p => p.tally).slice(0, 5).concat(shared, currentEvent?.customDrinks || [], currentEvent?.barDrinks || []));
+  $("btnNew").disabled = $("btnEventDrinks").disabled = false;
+  renderNames();
+}
+$("search").oninput = renderNames;
+const form = $("newAccount").querySelector("form");
+const newModal = BW.dialog($("newAccount"), () => !form.querySelector("button").disabled);
+$("btnNew").onclick = () => { form.reset(); newModal.open(); };
+BW.mountAccountForm(form, async account => {
+  $("newAccount").close(); BW.toast(account.name + " angelegt."); await load(); openSheet(account);
+});
+mountEventCard($("btnBarCard"), () => currentEvent, load);
+mountTemporaryDrinks({trigger:$("btnEventDrinks"), reload:load, getShared:() => shared, getEvent:() => currentEvent});
+if (eventId) {
+  $("btnActiveMeal").hidden = true;
+  $("pageTitle").textContent = "Veranstaltungsstrichliste";
+  $("tallyNav").removeAttribute("aria-current"); $("eventsNav").setAttribute("aria-current", "page");
+} else ActiveMeals.init({triggerId:"btnActiveMeal", toast:BW.toast, onCreated:() => load().catch(e => BW.toast(e.message))});
+load().catch(e => BW.toast(e.message));
+setInterval(() => {
+  if (!document.hidden && !document.querySelector("dialog[open]"))
+    load().catch(e => BW.toast(e.message));
+}, 30000);
+</script></body></html>

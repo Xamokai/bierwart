@@ -1,0 +1,88 @@
+# Bierwart LAN 1.10.1
+
+## Update einspielen
+
+1. Den BW-Server stoppen und den bisherigen Ordner sichern. Das ZIP in einen neuen Ordner entpacken. Die bisherigen Ordner `data`, `assets` und die `config.json` in den neuen Unterordner `getraenkekasse` übernehmen. Dort `npm start` ausführen. Bei einer Neuinstallation steht die LAN-Konfiguration in der [Serveranleitung](getraenkekasse/README.md).
+2. Für den Abgleich im Browser **Verwaltung → GnuCash Import / Export** öffnen.
+3. Beim ersten Abgleich mit einer neuen Kasse den Kontenbaum in der Vorschau übernehmen. Das geht bereits mit der Verwaltungs-PIN und ohne angelegte Personen. Eine automatisch erzeugte PIN steht auf dem Server in `data/admin-pin`. Bei einer selbst konfigurierten PIN dieselbe wie für die BW-Verwaltung verwenden.
+
+## Einstieg auf Handy, Tablet und PC
+
+Die normale BW-Adresse öffnet auf dem Handy **Mein Konto**, auf dem Tablet die **Strichliste** und am PC die **Verwaltung**. Eine bestehende Anmeldung wird verwendet. Über die Bereichslinks lässt sich jederzeit wechseln. Für ein festes Lesezeichen stehen `/strichliste.html`, `/veranstaltung.html`, `/user.html` und `/admin.html` zur Verfügung. Auch bisherige Strichlisten- und Veranstaltungslinks funktionieren weiter.
+
+Am PC öffnet **Mein Konto** mit **Meine Buchungen**. Das Kontomenü führt zum Getränkekauf, zu den Kontoeinstellungen und zu den freigeschalteten BW- und XXX-Bereichen. E-Mail-Adresse und Passwort stehen auf dem PC unter **Kontoeinstellungen**.
+
+## Schnapswart und Getränkekarten
+
+Im Ordner **Druckbeispiele** liegen die fertige Mixliste und die Preisliste der Halloweenparty als A4-PDF.
+
+1. In **Verwaltung → Konten** beim persönlichen Konto **Schnapswart** anhaken. Der Bereich erscheint unter **Mein Konto → Schnapswart**. Der Admin kann ihn direkt unter **Verwaltung → Schnapswart** öffnen.
+2. Unter **Rezept anlegen** Name, Kategorie, Preis und Glas wählen. Für jede Zutat gibt es ein Mengenfeld, das z. B. auch „1–2 TL“ oder „Schuss“ annimmt. Mengen dürfen frei bleiben. Die zwölf Getränke der mitgegebenen Mixliste stehen beim ersten Start im Katalog. Die übernommenen Startpreise sind 5 € für Cocktails, 4 € für Longdrinks, 3 € für Alkoholfreies und 1 € für Shots.
+3. Gewünschte Getränke anhaken und **Mixliste (PDF)** oder **Preisliste (PDF)** wählen. Beide A4-Dateien lassen sich öffnen und drucken. Die Mixliste enthält Glasart, Zutaten und Mengen. Die Gästekarte zeigt den Preis je Kategorie, bei unterschiedlichen Preisen den Einzelpreis.
+4. Dieselbe Auswahl lässt sich im Katalog über das Feld **Veranstaltung** und **Auswahl hinzufügen** auf eine Veranstaltungskarte setzen. Vor Ort können Helfer bei der geöffneten Veranstaltung **Getränkekarte** wählen und weitere Kataloggetränke hinzufügen. Die beiden PDF-Schaltflächen dort drucken die tatsächlich zugeordnete Karte mit dem Namen der Veranstaltung. Gebucht wird anschließend auf der gewohnten Strichliste oder direkt auf die Veranstaltung.
+5. **Auswahl von Karte nehmen** entfernt eine Zuordnung. **Bearbeiten → Rezept löschen** entfernt das Rezept aus dem Katalog und allen Veranstaltungskarten. Beides steht dem Schnapswart und dem Admin zur Verfügung. Gebuchte Posten behalten ihren damaligen Namen und Preis. Katalogrezepte sind dauerhaft, auch wenn die Veranstaltung abläuft.
+
+## Zahlungserinnerungen für XXX
+
+Unter **Mein Konto → Zahlungserinnerungen (XXX)** die gewünschten Personen mit offenem Betrag markieren und **Entwürfe vorbereiten** wählen. Die Vorschau verwendet pro Person die aktuelle E-Mail-Adresse und denselben Saldo wie in „Mein Konto“. Bei einem inzwischen ausgeglichenen Konto entfällt der Entwurf. Jeder Entwurf zeigt Empfänger, Betreff und Text. Über **Im Mailprogramm öffnen** kannst du ihn bearbeiten und selbst versenden. **Mailtext kopieren** eignet sich für Webmail. Der BW-Server braucht dafür keinen Mailzugang.
+
+Mitglieder können unter **Mein Konto → E-Mail-Adresse** eine persönliche Adresse hinterlegen oder zur Standardadresse zurückkehren. Der Standard lautet `vorname.nachname@uttenruthia.de`. Leerzeichen innerhalb eines Namens werden zu Punkten, Bindestriche bleiben erhalten und deutsche Umlaute werden als ae, oe oder ue geschrieben. Bei fehlendem Vor- oder Nachnamen kann das Mitglied die Adresse selbst ergänzen.
+
+## Anstreichen und Veranstaltungen
+
+Ein dünner orangefarbener Rand kennzeichnet priorisierte Konten und bei der Veranstaltungsauswahl die dauerhaft angelegten Veranstaltungen. Die Auswahl ist nach Themen gegliedert, auch im Schnapswart-Bereich. Innerhalb jedes Themas sind die Namen alphabetisch sortiert.
+
+| Einträge | Wo und wie gebucht wird |
+|---|---|
+| Abkneipe, Ankneipe, Stiftungsfestkneipe, Fuxenkneipe, Himmelfahrtsbummel, Kneipen, Stempferbummel, Stiftungstag, Stockwerksparty | Unter **Veranstaltung** auswählen und direkt auf das zugeordnete Konto buchen. Sonstige Anlässe mit Zuordnung auf 1800 oder 4150 verwenden ebenfalls die Direktbuchung. |
+| Arbeitseinsatz, Barzahler, Gast / Mitgliederwerbung, Grillkohle / Löschbier, Verrechnung Philister | Auf der **Strichliste** stehen diese Sammelkonten nach Übernahme des Kontenbaums direkt neben den Namen. Sie besitzen keinen Personenlogin. Die bestehende GnuCash-Zuordnung gilt weiter. |
+| Aktivenfahrt, Berg, Dürnstein, E/A-Konten, Feuerzangenbowle, Gansessen, Totengedenken, Weihnachten, Wissenschaftliche Abende | Im Kiosk ausgeblendet. Die Daten stehen für Auswertung und Buchhaltung weiterhin zur Verfügung. |
+| Cocktailabend/Sommerparty, Divali, Halloweenparty, Tresenbachelor, Stiftungsfestball | Unter **Veranstaltung** die Party öffnen. Es erscheint dieselbe Strichliste mit Namenskacheln und Suche wie im normalen Betrieb. Namen antippen, Getränke anstreichen und mit **Buchen** bestätigen. GnuCash belastet das Personenkonto und schreibt den Betrag dem Gegenkonto der Veranstaltung gut. Weitere Veranstaltungen ohne Sonderzuordnung verwenden ebenfalls die Personenstrichliste. |
+
+Ohne Suche erscheinen nur priorisierte Konten und Personen mit einem Getränkekauf in den letzten 24 Stunden. Über die Suche findest du die übrigen Konten. Die Regel gilt für die normale Strichliste und für Personenstrichlisten bei Veranstaltungen.
+
+Eine Getränkekachel fügt einen Strich hinzu. **−** nimmt einen einzelnen Strich zurück, **Zurücksetzen** leert die Auswahl. Erst **Buchen** schreibt die Buchung. Auf dem Handy lässt sich die Auswahl unter **Mein Konto → Getränke kaufen** öffnen.
+
+Unter **Temporäre Getränke** einen Namen und Preis eingeben. Das Getränk ist 24 Stunden auf der normalen Strichliste und bei Veranstaltungen verfügbar. Bei beiden Veranstaltungsarten beschränkt **Nur bei dieser Veranstaltung** das Getränk auf den ausgewählten Anlass. Im selben Dialog lässt es sich über **Entfernen** vorzeitig herausnehmen. Bereits gebuchte Getränke behalten Name und Preis.
+
+In **Mein Konto → Meine Buchungen** stehen Aktivenessen zusammen mit Getränkekäufen und den übrigen Kontobewegungen. Die jeweilige Essensbuchung lässt sich für Aufteilung, Ausleger und hinterlegte Rechnung öffnen. Die Verwaltungsfunktionen liegen unter **GnuCash Import / Export → Aktivenessen verwalten**.
+
+Die vorhandene Vorlage **Stiftungsfest** erscheint unter **Stiftungsfestball**. Die separate **Stiftungsfestkneipe** verwendet die Kneipenzuordnung. Bei abweichenden bestehenden Kontenplänen die Zuordnung im GnuCash-Arbeitsbereich prüfen.
+
+Unter **Verwaltung → Veranstaltungen** zeigt **BW-Getränkeposten gesamt** auch bereits übernommene Getränkebuchungen. **Offen in BW** zeigt Beträge, für die noch kein Export bestätigt wurde. **GnuCash-Saldo** zeigt den Wert des zugeordneten Kontos zum letzten Abgleich einschließlich Semesterabschluss und anderer GnuCash-Buchungen. Für diese Spalte einen Saldenabgleich mit der vollständigen GnuCash-XML-Datei durchführen.
+
+## Aktivenessen und Abrechnungs-PDF
+
+Unter **GnuCash Import / Export → Aktivenessen verwalten** können Verwaltung und XXX ein einzelnes Essen über **Formular und Rechnungen als PDF** herunterladen. **Semester als PDF** enthält die Formulare aller Essen im gewählten Semester mit den zugehörigen Rechnungsbildern. Die Abrechnung verwendet das Originalformular von 2024 mit 18 Teilnehmerzeilen. Aktiv und K-Gast werden im jeweiligen Kästchen angekreuzt. Weitere Personen folgen auf einem Zusatzblatt, danach die Rechnungsbilder. Die Felder zur Ankündigung und Portion bleiben für handschriftliche Angaben frei. Bei älteren Essen erscheinen Teilnehmergruppen und der Zuschuss pro Person nur, wenn die Angaben vorliegen.
+
+Im selben Bereich steht **Zuschuss pro Aktiv/K-Gast in €**. Der Standard ist **4,00 €**. Beim Anlegen eines Essens für jede Person **Vollpreis**, **Aktiv** oder **K-Gast** auswählen. Bei mindestens einem Teilnehmer teilt Bierwart die Auslagen zunächst gleichmäßig in Cent auf. **Aktiv** und **K-Gast** erhalten den Zuschuss höchstens bis zur Höhe ihres Anteils. Das Sammelkonto **Gast / Mitgliederwerbung** zählt als ein K-Gast. Ein leerer Preis wird automatisch berechnet. Manuelle Preise müssen zusammen mit dem Zuschuss die gesamte Rechnung ergeben.
+
+Für bestehende BW-Installationen den Server wie oben aktualisieren. Das ZIP bringt die PDF-Abhängigkeiten für reguläres 64-Bit-Linux mit. Bei einer Installation auf Windows, macOS oder einer anderen Architektur im Ordner **getraenkekasse** zuerst `npm ci` ausführen, damit Node die zur Plattform passenden Bildbibliotheken installiert.
+
+In **Verwaltung → Konten** und in der **Übersicht** stehen die zugeordneten Konten aufsteigend nach GnuCash-Kontonummer. Konten ohne Nummer folgen alphabetisch. Über die Suche in der Übersicht lassen sich auch Kontonummern eingeben.
+
+## Unbenutztes BW-Personenkonto löschen
+
+**Verwaltung → Konten → Löschen** neben dem Testkonto wählen und bestätigen. Erforderlich ist die Verwaltungs-PIN. Das Programm prüft unter anderem auf Buchungen und Beteiligung an Aktivenessen. Bereits bebuchte Konten sind auch bei einem Saldo von null geschützt. Ein eigenständiges GnuCash-Konto wird durch diese Aktion nicht gelöscht und kann beim folgenden Kontenimport wieder in BW erscheinen.
+
+## Buchungsläufe
+
+Bei der Sammelbuchung erhält jede Veranstaltung einen eigenen ausgeglichenen Buchungssatz. Im Abrechnungsbuch ist beispielsweise **4116 Divali** das Gegenkonto. Die Zuordnung lässt sich im GnuCash-Arbeitsbereich prüfen und ändern. Für eine neue Veranstaltung ohne zugeordnetes Konto kann BW nach dem Einlesen des Kontenbaums ein Konto vorschlagen.
+
+Bei einem vor diesem Update vorbereiteten Lauf mit Partybuchungen zuerst die Vorschau prüfen. Falls die Buchung noch nicht in GnuCash gespeichert wurde, den alten Lauf verwerfen und neu erstellen. Bereits gespeicherte Buchungen bei Bedarf in GnuCash umbuchen. Für einen Semesterlauf etwa den Stichtag `2026-08-31` und den freien Beleg `SS26 U1` eintragen. Nach einer Unterbrechung dieselbe aktuelle Buchdatei öffnen und den Import erneut aufrufen.
+
+
+## Abweichende Personensalden abgleichen
+
+Die frühere Übernahme ausgewählter Buchungen erfasst nur einen Teil des Personenkontos. Beispielsweise können Anfangsbestände und andere Vereinsbuchungen im GnuCash-Saldo enthalten sein. Ein positives Guthaben im GnuCash-Verbindlichkeitskonto entspricht einem positiven Guthaben in BW.
+
+1. Das aktuelle Vereinsbuch in GnuCash speichern. Im Browser unter **Verwaltung → GnuCash Import / Export → GnuCash einlesen** die vollständige .gnucash-XML-Datei wählen.
+2. In der Vorschau steht **Saldenabgleich** oben. **Kontoauszüge und Salden aus GnuCash übernehmen** ist vorausgewählt, wenn ein vollständiger Saldo verfügbar ist und kein Buchungslauf offen ist. Unter **Salden anzeigen** stehen der bisherige BW-Saldo, der GnuCash-Stand, offene BW-Buchungen und der vorgesehene neue Stand. Historische Buchungen wie Aktivenessen lassen sich zusätzlich auswählen.
+3. Prüfen und übernehmen. BW verwendet den GnuCash-Saldo bis zum heutigen Buchungstag und rechnet offene BW-Buchungen hinzu. Die interne Korrektur erscheint in der Historie und ist vom GnuCash-Export ausgeschlossen. Bei einem offenen Buchungslauf zuerst dessen Status klären. Bereits manuell in GnuCash verbuchte Posten müssen in BW als erledigt erfasst sein, damit sie nicht nochmals als offen zählen.
+
+
+## Meine Buchungen
+
+Nach dem Abgleich zeigt **Mein Konto → Meine Buchungen** jede Bewegung auf dem zugeordneten EUR-Personenkonto bis zum Buchungstag des Abgleichs. Dazu gehören Anfangsbestand, Ausgaben, Gutschriften, Buchungsdatum, Beleg, Gegenkonto und der Saldo nach der Buchung. Die Semester sind aufklappbar und zeigen die Summe der Zu- und Abgänge. Die Ansicht enthält auch BW-Buchungen, die seit dem Abgleich hinzugekommen sind.
+
+Übernommene BW-Einzelposten stehen unter der Buchungsliste mit ihrer ursprünglichen Uhrzeit und Getränkeauswahl. Der Saldo zählt sie über die zugehörige GnuCash-Buchung. Für die vollständige Ansicht im Browser eine aktuelle vollständige GnuCash-XML-Datei einlesen. Die Auswahl einzelner historischer Belege ist für den Kontoauszug optional.

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veranstaltungen – Bierwart</title><link rel="stylesheet" href="style.css"></head>
+<body class="kiosk">
+<header class="app"><h1>Veranstaltungen</h1>
+<nav class="pagenav" aria-label="Kasse"><a href="strichliste.html">Strichliste</a><a href="veranstaltung.html" aria-current="page">Veranstaltungen</a></nav></header>
+<main><section id="pick">
+  <div class="section-head"><h2>Veranstaltung auswählen</h2><button class="btn" id="btnNewEv">Veranstaltung anlegen</button></div>
+  <div id="events"></div>
+</section>
+<section id="book" hidden>
+  <div class="section-head"><div><h2 id="evName"></h2><div class="tally" id="evTally"></div></div>
+    <div class="row"><button class="btn" id="btnBarCard">Getränkekarte</button><button class="btn" id="btnEventDrinks">Temporäre Getränke</button></div></div>
+  <div class="drink-grid" id="prodGrid"></div>
+  <div class="order-bar"><span>Summe <strong id="evSum"></strong></span><div class="order-actions">
+    <button class="btn" id="btnReset">Zurücksetzen</button><button class="btn gold" id="btnBook">Buchen</button>
+  </div></div>
+  <a class="back-link" href="veranstaltung.html">← Andere Veranstaltung</a>
+</section></main>
+<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html">Mein Konto</a><a href="admin.html">Verwaltung</a></nav>
+<dialog class="bw-dialog compact-dialog" id="sheet" aria-labelledby="event-title">
+  <div class="dialog-head"><h2 id="event-title">Veranstaltung anlegen</h2><button class="btn small ghost" data-close>Schließen</button></div>
+  <p class="muted">Die Veranstaltung steht eine Woche zur Auswahl.</p>
+  <div class="row" id="kindChips" aria-label="Namensvorschläge"></div>
+  <form class="stack-form"><label>Name<input id="evNewName" maxlength="120" required placeholder="z. B. Fuxenkneipe"></label>
+    <button type="submit" class="btn gold">Veranstaltung anlegen</button></form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+<script src="display.js"></script><script src="ui.js"></script><script src="order.js"></script><script src="bar-types.js"></script><script src="bar-card.js"></script><script src="temporary-drinks.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let eventId = new URLSearchParams(location.search).get("event");
+let shared = [], current = null, kinds = [];
+const eventUrl = e => (e.mode === "personal" ? "strichliste.html" : "veranstaltung.html") + "?event=" + encodeURIComponent(e.id);
+const order = mountOrder({
+  grid:$("prodGrid"), sum:$("evSum"), tally:$("evTally"), reset:$("btnReset"), submit:$("btnBook"),
+  book:items => BW.post("/api/purchase", {accountId:current.id, items}),
+  onBooked:async () => { BW.toast("Gebucht auf " + current.name + "."); await load(); }, onRejected:load
+});
+function renderEventGroups(events) {
+  const container = $("events");
+  const groups = groupEventsByTheme(events).map(([theme, entries]) => {
+    const section = document.createElement("section");
+    section.className = "event-group";
+    const heading = document.createElement("h3");
+    heading.textContent = theme;
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    for (const e of entries) {
+      const link = document.createElement("a");
+      link.className = "tile event-tile" + (e.permanent ? " prio" : "");
+      if (e.permanent) link.setAttribute("aria-description", "Dauerhafte Veranstaltung");
+      link.href = eventUrl(e);
+      const name = document.createElement("strong"); name.textContent = e.name;
+      const mode = document.createElement("small"); mode.textContent = e.mode === "personal" ? "Auf Personen buchen" : "Direkt buchen";
+      link.append(name, mode);
+      grid.append(link);
+    }
+    section.append(heading, grid);
+    return section;
+  });
+  container.replaceChildren(...groups);
+  if (!groups.length) container.textContent = "Noch keine Veranstaltung angelegt.";
+}
+let loadNumber = 0;
+async function load() {
+  const number = ++loadNumber;
+  const [events, templates, products, drinks] = await Promise.all([
+    BW.api("/api/events"), BW.api("/api/eventkinds"), eventId ? BW.api("/api/products") : [], eventId ? BW.api("/api/temporary-drinks") : []
+  ]);
+  if (number !== loadNumber) return;
+  kinds = templates; shared = drinks;
+  current = events.find(e => e.id === eventId);
+  if (current?.mode === "personal") { location.replace(eventUrl(current)); return; }
+  $("pick").hidden = !!current; $("book").hidden = !current;
+  if (current) {
+    $("evName").textContent = current.name;
+    order.setProducts(products.concat(shared, current.customDrinks || [], current.barDrinks || []));
+  } else {
+    renderEventGroups(events);
+    if (eventId) { eventId = null; history.replaceState(null, "", "veranstaltung.html"); throw Error("Diese Veranstaltung ist nicht mehr verfügbar."); }
+  }
+}
+mountEventCard($("btnBarCard"), () => current, load);
+mountTemporaryDrinks({trigger:$("btnEventDrinks"), reload:load, getShared:() => shared, getEvent:() => current});
+const form = $("sheet").querySelector("form");
+const submit = form.querySelector("button");
+const modal = BW.dialog($("sheet"), () => !submit.disabled);
+$("btnNewEv").onclick = () => {
+  const today = new Date().toLocaleDateString("de-DE"); form.reset(); $("kindChips").replaceChildren();
+  for (const kind of kinds) {
+    const b = document.createElement("button");
+    b.className = "btn small"; b.textContent = kind;
+    b.onclick = () => { $("evNewName").value = kind + " " + today; };
+    $("kindChips").append(b);
+  }
+  modal.open();
+};
+form.onsubmit = async e => {
+  e.preventDefault(); if (submit.disabled) return;
+  submit.disabled = true;
+  try {
+    const event = await BW.post("/api/events", {name:$("evNewName").value});
+    location.assign("veranstaltung.html?event=" + encodeURIComponent(event.id));
+  } catch (error) { BW.toast(error.message); submit.disabled = false; }
+};
+load().catch(e => BW.toast(e.message));
+setInterval(() => {
+  if (!document.hidden && !order.busy && !order.selected && !document.querySelector("dialog[open]"))
+    load().catch(e => BW.toast(e.message));
+}, 30000);
+</script></body></html>

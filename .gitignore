@@ -1,0 +1,8 @@
+**/node_modules/
+/getraenkekasse/.bierwart/
+/getraenkekasse/data/
+/getraenkekasse/assets/
+/getraenkekasse/config.json
+/getraenkekasse/update-manager/local-signers
+*.bundle
+*.gnucash

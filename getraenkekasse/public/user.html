@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mein Konto – Getränkekasse</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="account-page">
+<header class="app">
+  <h1>Mein Konto</h1>
+  <button class="btn small" id="btnLogout" style="display:none">Abmelden</button>
+</header>
+
+<main>
+  <!-- Login -->
+  <section id="login" style="max-width:440px; margin:30px auto">
+    <div class="card">
+      <h2 style="margin-top:0">Anmelden</h2>
+      <label for="loginName">Name</label>
+      <div style="position:relative; margin-bottom:12px">
+        <input id="loginName" type="text" autocomplete="username" autocapitalize="words" placeholder="Name eintippen …">
+        <div class="suggest" id="suggest"></div>
+      </div>
+      <label for="loginPw">Passwort</label>
+      <input id="loginPw" type="password" autocomplete="current-password" placeholder="Passwort">
+      <button class="btn gold" id="btnLogin" style="width:100%; margin-top:14px">Anmelden</button>
+      <div class="muted" role="status" id="loginMsg" style="margin-top:10px"></div>
+    </div>
+    <p class="muted" style="text-align:center">Beim ersten Login ist dein Nachname das Passwort. Neue Konten können an der Strichliste oder in der Verwaltung angelegt werden.</p>
+  </section>
+
+  <nav id="accountNav" class="tabs" aria-label="Kontobereiche" hidden>
+    <button type="button" class="btn" aria-controls="history">Meine Buchungen</button>
+    <button type="button" class="btn" aria-controls="shop">Getränke kaufen</button>
+    <button type="button" class="btn" aria-controls="emailPanel passwordPanel">Kontoeinstellungen</button>
+    <button type="button" class="btn" aria-controls="secDash">Kontenübersicht (BW)</button>
+    <button type="button" class="btn" aria-controls="secBar">Schnapswart</button>
+    <button type="button" class="btn" aria-controls="secProd">Produkte &amp; Preise (BW)</button>
+    <button type="button" class="btn" aria-controls="debtMails">Zahlungserinnerungen (XXX)</button>
+    <button type="button" class="btn" aria-controls="secGnu">GnuCash Import / Export (XXX)</button>
+    <button type="button" class="btn" aria-controls="secAudit">Änderungsprotokoll (XXX)</button>
+  </nav>
+
+  <!-- Konto -->
+  <section id="me" style="display:none">
+    <aside class="card" id="initialNotice" role="status" hidden>
+      <strong>Du verwendest dein Startpasswort.</strong> Du kannst es hier ändern.
+      <div class="row"><button class="btn gold" id="changeInitial">Passwort ändern</button>
+      <button class="btn" id="laterInitial">Später</button></div>
+    </aside>
+    <div class="card row account-summary" style="justify-content:space-between">
+      <div>
+        <div class="account-name" id="meName">–</div>
+        <div class="balance-big" id="meBalance">0,00 €</div>
+      </div>
+      <button class="btn gold" id="btnActiveMeal">Aktivenessen anlegen</button>
+    </div>
+
+    <h2 class="section-title" id="accountViewTitle" hidden></h2>
+    <details class="daygroup shop" id="shop"><summary><strong>Getränke kaufen</strong></summary>
+      <div class="body"><div class="drink-grid" id="buyProducts"></div>
+        <div class="order-bar" id="buyBar"><span>Summe <strong id="buySum"></strong></span>
+          <div class="order-actions"><button class="btn" id="btnResetBuy">Zurücksetzen</button>
+          <button class="btn gold" id="btnBook">Buchen</button></div>
+        </div>
+      </div>
+    </details>
+    <h2 class="section-title" id="historyTitle">Meine Buchungen</h2>
+    <div id="history"></div>
+
+    <details id="emailPanel" class="daygroup">
+      <summary><strong>E-Mail-Adresse</strong><span class="muted">▾</span></summary>
+      <form class="body email-settings" id="emailForm">
+        <label for="ownEmail">Meine E-Mail-Adresse für Zahlungserinnerungen</label>
+        <input type="email" id="ownEmail" maxlength="254" autocomplete="email" autocapitalize="none" spellcheck="false" aria-describedby="emailDefault">
+        <p class="muted" id="emailDefault"></p>
+        <div class="row"><button class="btn gold" type="submit">Adresse speichern</button>
+          <button class="btn" type="button" id="emailReset" hidden>Standardadresse verwenden</button></div>
+        <p id="emailMessage" role="status"></p>
+      </form>
+    </details>
+
+    <!-- Passwort ändern -->
+    <details id="passwordPanel" class="daygroup" style="margin-top:20px">
+      <summary><strong>Passwort ändern</strong><span class="muted">▾</span></summary>
+      <div class="body">
+        <label for="pwOld">Aktuelles Passwort</label>
+        <input id="pwOld" type="password" autocomplete="current-password" style="margin-bottom:10px">
+        <label for="pwNew">Neues Passwort (mind. 4 Zeichen)</label>
+        <input id="pwNew" type="password" autocomplete="new-password" style="margin-bottom:10px">
+        <label for="pwNew2">Neues Passwort wiederholen</label>
+        <input id="pwNew2" type="password" autocomplete="new-password" style="margin-bottom:12px">
+        <button class="btn gold" id="btnPw">Passwort speichern</button>
+        <div class="muted" id="pwMsg" style="margin-top:8px"></div>
+      </div>
+    </details>
+
+    <!-- Nur sichtbar mit Rolle BW: Übersicht aller Konten -->
+    <details class="daygroup" id="secDash" style="display:none">
+      <summary><strong>Übersicht (BW)</strong><span class="muted">▾</span></summary>
+      <div class="body">
+        <div class="row" style="margin:8px 0 12px">
+          <input id="roleDashSearch" class="grow" type="search" placeholder="Name oder Kontonummer …">
+          <button class="btn" id="btnNegPdf">Negativ-Liste drucken (PDF)</button>
+          <button class="btn" id="btnBackupTally">Papier-Strichliste (ODS)</button>
+        </div>
+        <div id="roleDash" class="muted">Lade …</div>
+      </div>
+    </details>
+
+    <details class="daygroup" id="secBar" hidden>
+      <summary><strong>Schnapswart</strong><span class="muted">▾</span></summary>
+      <div class="body" id="barManager"></div>
+    </details>
+    <!-- Nur sichtbar mit Rolle BW: Produkte & Preise -->
+    <details class="daygroup" id="secProd" style="display:none">
+      <summary><strong>Produkte &amp; Preise (BW)</strong><span class="muted">▾</span></summary>
+      <div class="body">
+        <p class="muted" style="margin-top:8px">Preise ändern, Getränke anlegen, Bilder hochladen (neu oder bestehendes Foto ersetzen). „Strichliste“ = erscheint am Tablet (max. 5). <strong>Striche</strong> (20/10) und Reihenfolge (▲▼) steuern die Papier-Strichliste – „20er“ nach oben, damit alles auf eine A4-Seite passt.</p>
+        <div id="prodEdit"></div>
+        <input type="file" id="fileUp" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="btnAddProd">Produkt hinzufügen</button>
+          <button class="btn gold" id="btnSaveProd">Speichern</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="daygroup" id="debtMails" hidden>
+      <summary><strong>Zahlungserinnerungen (XXX)</strong><span class="muted">▾</span></summary>
+      <div class="body">
+        <p>Wähle die Personen mit offenem Betrag. Du kannst jede Mail einzeln prüfen und in deinem Mailprogramm versenden.</p>
+        <div class="debt-list" data-recipients></div>
+        <div class="row"><button type="button" class="btn gold" data-generate disabled>Entwürfe vorbereiten</button>
+          <button type="button" class="btn" data-refresh>Liste aktualisieren</button><span class="muted" data-count></span></div>
+        <p role="status" data-status></p>
+        <div data-drafts></div>
+      </div>
+    </details>
+
+    <!-- Nur sichtbar mit Rolle XXX: unveränderliches Änderungsprotokoll -->
+    <details class="daygroup" id="secAudit" style="display:none">
+      <summary><strong>Änderungsprotokoll (XXX)</strong><span class="muted">▾</span></summary>
+      <div class="body">
+        <p class="muted" style="margin-top:8px">Finanzielle und administrative Änderungen mit Zeitpunkt, handelnder Person und Vorher-/Nachher-Werten. Das Protokoll enthält keine Passwörter.</p>
+        <div id="userAuditLog"></div>
+      </div>
+    </details>
+
+    <!-- Nur sichtbar mit Rolle XXX: GnuCash Import/Export -->
+    <details class="daygroup" id="secGnu" style="display:none">
+      <summary><strong>GnuCash Import / Export (XXX)</strong><span class="muted">▾</span></summary>
+      <div class="body">
+        <div id="gnuWorkbench"></div>
+        <details class="daygroup">
+          <summary><strong>Aktivenessen verwalten</strong><span class="muted">▾</span></summary>
+          <div class="body">
+            <div class="card" style="margin-top:10px">
+              <label>XXX-Karte / Standard-Gegenkonto</label>
+              <p class="muted" style="margin:5px 0 10px">GnuCash-Kontonummer oder vollständiger Kontopfad für Aktivenessen ohne persönlichen Ausleger.</p>
+              <div class="row">
+                <input id="xxxCardAccountUser" class="grow" placeholder="z. B. Aktiva:Umlaufvermögen:XXX-Karte">
+                </div>
+              <label for="mealSubsidyUser" style="margin-top:12px">Zuschuss pro Aktiv/K-Gast in €</label>
+              <input id="mealSubsidyUser" inputmode="decimal" style="max-width:160px"> <button class="btn gold" id="btnSaveXxxCardUser">Speichern</button>
+              <div class="muted" id="xxxCardInfoUser" style="margin-top:8px">Internes Konto wird geladen …</div>
+            </div>
+            <div id="userManagedActiveMeals"></div>
+          </div>
+        </details>
+
+        <details><summary>Manuelle Altliste (einmalige Übernahme)</summary><p class="muted">CSV mit <em>Name;Betrag</em> – jeder Betrag wird als Einzahlung gebucht.</p>
+        <div class="row">
+          <input type="file" id="impFile" accept=".csv,.txt" class="grow">
+          <label class="row" style="margin:0; text-transform:none"><input type="checkbox" id="impCreate" style="width:auto; min-height:auto"> unbekannte Namen anlegen</label>
+          <button class="btn gold" id="btnImport">Importieren</button>
+        </div>
+        <pre class="muted" id="impResult" style="white-space:pre-wrap"></pre></details>
+      </div>
+    </details>
+  </section>
+</main>
+
+<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="strichliste.html">Strichliste</a><a href="veranstaltung.html">Veranstaltungen</a><a href="admin.html">Verwaltung</a></nav>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="device.js"></script>
+<script src="account-navigation.js"></script>
+<script src="display.js"></script>
+<script src="ui.js"></script>
+<script src="bar-types.js"></script><script src="bar-manager.js"></script>
+<script src="debt-mails.js"></script>
+<script src="accounting-actions.js"></script>
+<script src="order.js"></script>
+<script src="meal-allocation.js"></script>
+<script src="active-meals.js"></script>
+<script src="gnucash-workbench.js"></script>
+<script src="active-meal-management.js"></script>
+<script src="audit-log.js"></script>
+<script>
+const eur = n => n.toFixed(2).replace(".", ",") + " €";
+let products = [], sharedDrinks = [], me = null;
+let userMealManager = null;
+let userAuditLog = null;
+let token = localStorage.getItem("kasse_token") || "";
+const authH = () => ({ "Authorization": "Bearer " + token, "Content-Type": "application/json" });
+
+const accountNavigation = mountAccountNavigation();
+const mailPanel = document.getElementById("debtMails");
+const barPanel = document.getElementById("secBar");
+const barManager = mountBarManager(document.getElementById("barManager"),authH);
+barPanel.ontoggle = () => { if (barPanel.open && !barPanel.hidden) barManager.refresh(); };
+const debtMails = mountDebtMails(mailPanel, authH);
+const emailForm = document.getElementById("emailForm");
+const emailInput = document.getElementById("ownEmail");
+const emailReset = document.getElementById("emailReset");
+const emailMessage = document.getElementById("emailMessage");
+
+function showEmail(profile) {
+  emailInput.value = profile.email;
+  document.getElementById("emailDefault").textContent = profile.defaultEmail
+    ? "Standardadresse: " + profile.defaultEmail : "Für diesen Namen ist eine eigene Adresse erforderlich.";
+  emailReset.hidden = !profile.customEmail;
+}
+
+async function saveEmail(value) {
+  const session = token;
+  const save = emailForm.querySelector('[type="submit"]');
+  if (save.disabled) return;
+  save.disabled = emailReset.disabled = true;
+  emailMessage.textContent = "";
+  try {
+    const profile = await BW.api("/api/me/email", {
+      method:"PUT", headers:authH(), body:JSON.stringify({email:value})
+    });
+    if (session !== token || !me) return;
+    Object.assign(me, profile);
+    showEmail(profile);
+    emailMessage.textContent = profile.email ? "E-Mail-Adresse gespeichert." : "Eigene E-Mail-Adresse entfernt.";
+  } catch (error) { if (session === token) emailMessage.textContent = error.message; }
+  finally { if (session === token) save.disabled = emailReset.disabled = false; }
+}
+emailForm.onsubmit = e => { e.preventDefault(); saveEmail(emailInput.value); };
+emailReset.onclick = () => saveEmail("");
+
+async function init() {
+  [products, sharedDrinks] = await Promise.all([BW.api("/api/products"), BW.api("/api/temporary-drinks")]);
+  if (token && await loadMe()) return;
+  await showLogin();
+}
+
+let accountNames = [];
+
+async function showLogin() {
+  me = null; order.clear();
+  accountNavigation.reset();
+  barPanel.hidden = true; barPanel.open = false; barManager.reset();
+  mailPanel.hidden = true; mailPanel.open = false; debtMails.clear();
+  document.getElementById("emailPanel").open = false; emailForm.reset();
+  document.getElementById("emailDefault").textContent = emailMessage.textContent = "";
+  emailForm.querySelector('[type="submit"]').disabled = emailReset.disabled = false;
+  document.getElementById("shop").open = false;
+  token = ""; localStorage.removeItem("kasse_token");
+  document.getElementById("login").style.display = "";
+  document.getElementById("me").style.display = "none";
+  document.getElementById("btnLogout").style.display = "none";
+  const accounts = await fetch("/api/accounts").then(r => r.json());
+  accountNames = accounts.map(a => a.name);
+  const last = localStorage.getItem("kasse_lastname");
+  if (last && accountNames.includes(last)) {
+    document.getElementById("loginName").value = last;
+    if (matchMedia("(pointer: fine)").matches) document.getElementById("loginPw").focus();
+  } else if (matchMedia("(pointer: fine)").matches) {
+    document.getElementById("loginName").focus();
+  }
+}
+
+/* Vorschläge beim Tippen – kein langes Scrollen mehr */
+const nameInput = document.getElementById("loginName");
+const suggestBox = document.getElementById("suggest");
+function renderSuggest() {
+  const q = nameInput.value.trim().toLowerCase();
+  if (!q) { suggestBox.innerHTML = ""; return; }
+  const hits = accountNames.filter(n => n.toLowerCase().includes(q));
+  const exact = hits.length === 1 && hits[0].toLowerCase() === q;
+  suggestBox.innerHTML = exact ? "" : hits.slice(0, 6).map(n => `<button type="button">${displayText(n)}</button>`).join("");
+  suggestBox.querySelectorAll("button").forEach(b => b.onclick = () => {
+    nameInput.value = b.textContent;
+    suggestBox.innerHTML = "";
+    document.getElementById("loginPw").focus();
+  });
+}
+nameInput.addEventListener("input", renderSuggest);
+nameInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    const first = suggestBox.querySelector("button");
+    if (first) first.click(); else document.getElementById("loginPw").focus();
+  }
+});
+document.addEventListener("click", e => {
+  if (!e.target.closest("#suggest") && e.target !== nameInput) suggestBox.innerHTML = "";
+});
+
+document.getElementById("btnLogin").onclick = async () => {
+  const name = nameInput.value.trim();
+  const password = document.getElementById("loginPw").value;
+  const r = await fetch("/api/login", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, password })
+  });
+  const d = await r.json();
+  if (!r.ok) { document.getElementById("loginMsg").textContent = d.error; return; }
+  token = d.token; localStorage.setItem("kasse_token", token);
+  localStorage.setItem("kasse_lastname", d.account.name);
+  document.getElementById("loginPw").value = "";
+  document.getElementById("loginMsg").textContent = "";
+  loadMe();
+};
+document.getElementById("loginPw").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("btnLogin").click(); });
+
+document.getElementById("btnLogout").onclick = async () => {
+  await fetch("/api/logout", { method: "POST", headers: authH() }).catch(() => {});
+  showLogin();
+};
+
+document.getElementById("laterInitial").onclick = () => {
+  sessionStorage.setItem("bw_hint_dismissed",token);
+  document.getElementById("initialNotice").hidden = true;
+};
+document.getElementById("changeInitial").onclick = () => {
+  accountNavigation.select("passwordPanel");
+  document.getElementById("passwordPanel").open = true;
+  document.getElementById("pwOld").focus();
+};
+async function loadMe() {
+  const session = token;
+  const r = await fetch("/api/me", { headers: authH() });
+  if (!r.ok) return false;
+  const d = await r.json();
+  if (session !== token) return false;
+  if (!me || me.id !== d.account.id || emailInput.value === me.email) showEmail(d.account);
+  me = d.account;
+  document.getElementById("initialNotice").hidden = !me.initialPassword || sessionStorage.getItem("bw_hint_dismissed") === token;
+  document.getElementById("login").style.display = "none";
+  document.getElementById("me").style.display = "";
+  document.getElementById("btnLogout").style.display = "";
+  document.getElementById("meName").textContent = me.name;
+  document.getElementById("meBalance").textContent = eur(me.balance);
+  renderBuy();
+  renderHistory(d.statement, d.activeMeals || []);
+  applyRoles();
+  accountNavigation.refresh();
+  return true;
+}
+
+function renderMealDetails(meal) {
+  const people = meal.participants.map(person => `
+    <div class="list-item"><span>${displayText(person.name)}${person.role ? " · " + displayText(activeMealRoleLabel(person.role)) : ""}</span><strong>${eur(person.price)}</strong></div>`).join("");
+  const payouts = meal.payouts?.length
+    ? meal.payouts.map(payer => payer.name + " (" + eur(payer.amount) + ")").join(", ")
+    : meal.payer?.name || "XXX-Karte";
+  const receipts = meal.receipts.map((url, i) => `
+    <a href="${displayText(url)}" target="_blank" rel="noopener"><img class="meal-receipt" src="${displayText(url)}" alt="Rechnung ${i + 1}"></a>`).join("");
+  return `
+    <div class="list-item"><span>Gesamtkosten</span><strong>${eur(meal.total)}</strong></div>
+    ${meal.guestShare ? `<div class="list-item"><span>Gäste</span><strong>${eur(meal.guestShare)}</strong></div>` : ""}
+    ${meal.subsidy ? `<div class="list-item"><span>Zuschuss</span><strong>${eur(meal.subsidy)}</strong></div>` : ""}
+    <div class="list-item"><span>Ausgelegt von</span><strong>${displayText(payouts)}</strong></div>
+    ${people}
+    ${receipts ? `<div class="meal-receipts">${receipts}</div>` : ""}`;
+}
+
+function renderHistory(statement, meals = []) {
+  const history = document.getElementById("history");
+  const {entries, date, localDetails} = statement;
+  const mealsById = new Map(meals.map(meal => [meal.id, meal]));
+  const formatDate = value => new Date(value + "T12:00:00").toLocaleDateString("de-DE");
+  const amount = cents => (cents < 0 ? "−" : "+") + eur(Math.abs(cents) / 100);
+  const amountClass = cents => cents < 0 ? "amount-neg" : "amount-pos";
+  const renderEntry = row => {
+    const meal = mealsById.get(row.mealId);
+    const title = displayText(row.description || meal?.name || "Buchung");
+    const metadata = [formatDate(row.date), row.time, row.number && "Beleg " + row.number, row.source]
+      .filter(Boolean).map(displayText).join(" · ");
+    const caption = `<span><strong>${title}</strong><br><span class="muted">${metadata}</span></span>`;
+    const amountAndBalance = row.infoOnly ? "" : `<span class="right">
+      <strong class="${amountClass(row.amount)}">${amount(row.amount)}</strong>
+      ${row.balance === undefined ? "" : `<span class="muted booking-balance">Saldo ${amount(row.balance)}</span>`}
+    </span>`;
+    const details = `
+      ${row.counterAccounts.length ? `<div>Gegenkonto: ${row.counterAccounts.map(displayText).join(" · ")}</div>` : ""}
+      ${row.items?.length ? `<div class="muted">${row.items.map(item => displayText(item.qty + " × " + item.name + " à " + eur(item.price))).join(" · ")}</div>` : ""}
+      ${row.memo && row.memo !== row.description ? `<div class="muted">${displayText(row.memo)}</div>` : ""}`;
+    if (meal) return `
+      <details class="list-booking">
+        <summary>${caption}${amountAndBalance}</summary>
+        <div class="booking-details">${details}${renderMealDetails(meal)}</div>
+      </details>`;
+    return `<div class="list-item">
+      <div>${caption}${details}</div>
+      ${amountAndBalance}
+    </div>`;
+  };
+  const groups = new Map();
+  for (const row of entries) {
+    const semester = semesterOf(row.date);
+    if (!groups.has(semester)) groups.set(semester, []);
+    groups.get(semester).push(row);
+  }
+  const current = semesterOf(new Date().toISOString());
+  const semesters = [...groups].map(([semester, rows]) => {
+    const received = rows.reduce((total, row) => total + Math.max(0, row.amount), 0);
+    const spent = rows.reduce((total, row) => total - Math.min(0, row.amount), 0);
+    return `<details class="daygroup semgroup" ${semester === current ? "open" : ""}>
+      <summary><strong>${semester}</strong><span>Erhalten ${eur(received / 100)} · Ausgegeben ${eur(spent / 100)}</span></summary>
+      <div class="body">${rows.map(renderEntry).join("")}</div>
+    </details>`;
+  }).join("");
+  history.innerHTML = (date ? `<p class="muted">GnuCash-Stand vom ${formatDate(date)}</p>` : "")
+    + (semesters || '<div class="card muted">Noch keine Buchungen.</div>')
+    + (localDetails.length ? `<details class="daygroup"><summary>BW-Einzelposten zu bereits übernommenen Buchungen</summary>
+      <div class="body"><p class="muted">Die Beträge sind oben bereits im Kontoauszug enthalten.</p>${localDetails.map(renderEntry).join("")}</div></details>` : "");
+}
+
+/* Passwort ändern */
+document.getElementById("btnPw").onclick = async () => {
+  const oldPassword = document.getElementById("pwOld").value;
+  const newPassword = document.getElementById("pwNew").value;
+  const msg = document.getElementById("pwMsg");
+  if (newPassword !== document.getElementById("pwNew2").value) { msg.textContent = "Die neuen Passwörter stimmen nicht überein."; return; }
+  const r = await fetch("/api/me/password", { method: "POST", headers: authH(), body: JSON.stringify({ oldPassword, newPassword }) });
+  const d = await r.json();
+  if (!r.ok) { msg.textContent = d.error; return; }
+  ["pwOld", "pwNew", "pwNew2"].forEach(id => document.getElementById(id).value = "");
+  msg.textContent = "";
+  document.getElementById("initialNotice").hidden = true;
+  toast("Passwort geändert ✓");
+};
+
+const order = mountOrder({
+  grid:document.getElementById("buyProducts"), sum:document.getElementById("buySum"),
+  reset:document.getElementById("btnResetBuy"), submit:document.getElementById("btnBook"),
+  book:items => BW.post("/api/purchase", {accountId:me.id, items}, authH()),
+  onRejected:refreshOffer,
+  onBooked:async () => { toast("Gebucht für " + me.name + "."); await loadMe(); }
+});
+function renderBuy() { order.setProducts(products.concat(sharedDrinks)); }
+async function refreshOffer() {
+  [products, sharedDrinks] = await Promise.all([BW.api("/api/products"), BW.api("/api/temporary-drinks")]);
+  renderBuy();
+}
+document.getElementById("shop").addEventListener("toggle", e => {
+  if (e.target.open) refreshOffer().catch(error => toast(error.message));
+});
+
+function toast(message) { BW.toast(message); }
+
+/* ===== Rollen-Bereiche (nur sichtbar, wenn der Admin das Recht vergeben hat) ===== */
+let roleAccounts = [], roleTx = [];
+
+function applyRoles() {
+  const roles = (me && me.roles) || {};
+  barPanel.hidden = !roles.schnapswart;
+  if (barPanel.hidden && barPanel.open) { barPanel.open = false; barManager.reset(); }
+  mailPanel.hidden = !roles.gnucash;
+  if (!roles.gnucash) { mailPanel.open = false; debtMails.clear(); }
+  document.getElementById("secDash").style.display = roles.uebersicht ? "" : "none";
+  document.getElementById("secProd").style.display = roles.uebersicht ? "" : "none";
+  document.getElementById("secAudit").style.display = roles.gnucash ? "" : "none";
+  document.getElementById("secGnu").style.display = roles.gnucash ? "" : "none";
+  if (roles.uebersicht) { loadRoleDash(); editProducts = products.map(p => ({ ...p })); renderProdEdit(); }
+  if (roles.gnucash && userMealManager) userMealManager.refresh();
+  if (roles.gnucash && userAuditLog) userAuditLog.refresh();
+  if (roles.gnucash) {
+    if (!gnuWorkbench) gnuWorkbench = mountGnucashWorkbench(document.getElementById("gnuWorkbench"), authH, toast,loadMe);
+    else gnuWorkbench.refresh();
+  }
+}
+
+/* --- BW: Produkte & Preise --- */
+let editProducts = [], uploadTarget = null;
+function collectProdEdit() {
+  document.querySelectorAll("#prodEdit [data-k]").forEach(inp => {
+    const p = editProducts[Number(inp.dataset.i)];
+    if (!p) return;
+    if (inp.type === "checkbox") p[inp.dataset.k] = inp.checked;
+    else if (inp.dataset.k === "ticks") p.ticks = Number(inp.value);
+    else p[inp.dataset.k] = inp.value;
+  });
+}
+function renderProdEdit() {
+  const el = document.getElementById("prodEdit");
+  el.innerHTML = editProducts.map((p, i) => `
+    <div class="prodrow" data-row="${i}">
+      <div style="display:flex; flex-direction:column; gap:3px; align-items:center">
+        <span class="grip" draggable="true" title="Ziehen zum Sortieren">⠿</span>
+        <button class="btn small" data-mv="up" data-i="${i}" ${i === 0 ? "disabled" : ""}>▲</button>
+        <button class="btn small" data-mv="down" data-i="${i}" ${i === editProducts.length - 1 ? "disabled" : ""}>▼</button>
+      </div>
+      <img class="prodthumb" src="/assets/res/${displayText(p.image)}" alt="">
+      <div class="grow">
+        <div class="row" style="margin-bottom:6px">
+          <input data-i="${i}" data-k="name" value="${displayText(p.name)}" placeholder="Name" class="grow">
+          <input data-i="${i}" data-k="price" value="${typeof p.price === "number" ? p.price.toFixed(2).replace(".", ",") : p.price}" placeholder="Preis" style="max-width:90px">
+        </div>
+        <div class="row">
+          <input data-i="${i}" data-k="image" value="${displayText(p.image)}" placeholder="Bilddatei" class="grow">
+          <button class="btn small" data-upl="${i}">Bild hochladen</button>
+          <label class="row" style="margin:0; text-transform:none; font-size:.85rem"><input type="checkbox" data-i="${i}" data-k="tally" ${p.tally ? "checked" : ""} style="width:auto; min-height:auto"> Strichliste</label>
+          <label class="row" style="margin:0; text-transform:none; font-size:.85rem">Striche
+            <select data-i="${i}" data-k="ticks" style="min-height:38px; max-width:72px"><option value="20"${p.ticks !== 10 ? " selected" : ""}>20</option><option value="10"${p.ticks === 10 ? " selected" : ""}>10</option></select></label>
+          <button class="btn small" data-del="${i}">Entfernen</button>
+        </div>
+      </div>
+    </div>`).join("");
+  el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { collectProdEdit(); editProducts.splice(Number(b.dataset.del), 1); renderProdEdit(); });
+  el.querySelectorAll("[data-upl]").forEach(b => b.onclick = () => { collectProdEdit(); uploadTarget = Number(b.dataset.upl); document.getElementById("fileUp").click(); });
+  el.querySelectorAll("[data-mv]").forEach(b => b.onclick = () => {
+    collectProdEdit();
+    const i = Number(b.dataset.i), j = b.dataset.mv === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= editProducts.length) return;
+    [editProducts[i], editProducts[j]] = [editProducts[j], editProducts[i]];
+    renderProdEdit();
+  });
+  enableProdDnd();
+}
+
+/* Drag & Drop (Desktop) für die BW-Produktliste */
+let dragFromBw = null;
+function enableProdDnd() {
+  const rows = document.querySelectorAll("#prodEdit .prodrow");
+  rows.forEach((row, idx) => {
+    const grip = row.querySelector(".grip");
+    if (grip) {
+      grip.addEventListener("dragstart", e => { collectProdEdit(); dragFromBw = idx; row.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
+      grip.addEventListener("dragend", () => { dragFromBw = null; rows.forEach(r => r.classList.remove("dragging", "over")); });
+    }
+    row.addEventListener("dragover", e => { if (dragFromBw !== null) { e.preventDefault(); row.classList.add("over"); } });
+    row.addEventListener("dragleave", () => row.classList.remove("over"));
+    row.addEventListener("drop", e => {
+      e.preventDefault();
+      row.classList.remove("over");
+      if (dragFromBw === null || dragFromBw === idx) return;
+      const [m] = editProducts.splice(dragFromBw, 1);
+      editProducts.splice(idx, 0, m);
+      dragFromBw = null;
+      renderProdEdit();
+    });
+  });
+}
+document.getElementById("fileUp").onchange = async e => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file || uploadTarget === null) return;
+  const safe = file.name.replace(/[^\w.\-äöüÄÖÜß]/g, "_");
+  const r = await fetch(`/api/admin/upload?name=${encodeURIComponent(safe)}`, {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + token, "Content-Type": "application/octet-stream" },
+    body: file
+  });
+  const d = await r.json();
+  if (!r.ok) return toast(d.error);
+  collectProdEdit();
+  editProducts[uploadTarget].image = d.file;
+  renderProdEdit();
+  toast(`Bild ${d.file} hochgeladen ✓ – noch „Speichern“ klicken`);
+};
+document.getElementById("btnAddProd").onclick = () => { collectProdEdit(); editProducts.push({ name: "", price: 0, image: "", tally: false, ticks: 20 }); renderProdEdit(); };
+document.getElementById("btnSaveProd").onclick = async () => {
+  collectProdEdit();
+  const r = await fetch("/api/admin/products", { method: "PUT", headers: authH(), body: JSON.stringify({ products: editProducts }) });
+  const d = await r.json();
+  if (!r.ok) return toast(d.error);
+  products = d.products;
+  editProducts = products.map(p => ({ ...p }));
+  renderProdEdit();
+  renderBuy();
+  toast("Gespeichert ✓ (products.csv)");
+};
+
+/* --- BW: Übersicht --- */
+async function loadRoleDash() {
+  const [a, t] = await Promise.all([
+    fetch("/api/admin/accounts", { headers: authH() }).then(r => r.ok ? r.json() : []),
+    fetch("/api/admin/transactions", { headers: authH() }).then(r => r.ok ? r.json() : [])
+  ]);
+  roleAccounts = a; roleTx = t;
+  renderRoleDash();
+}
+function renderRoleDash() {
+  const q = (document.getElementById("roleDashSearch").value || "").toLowerCase();
+  const el = document.getElementById("roleDash");
+  el.innerHTML = "";
+  const byAcc = {};
+  roleTx.forEach(t => (byAcc[t.accountId] = byAcc[t.accountId] || []).push(t));
+  roleAccounts.filter(a => a.name.toLowerCase().includes(q) || a.accountNumber.includes(q)).sort(compareAccounts).forEach(a => {
+    const tx = byAcc[a.id] || [];
+    const det = document.createElement("details");
+    det.className = "daygroup";
+    det.innerHTML = `<summary><span>${a.accountNumber ? displayText(a.accountNumber) + " · " : ""}${displayText(a.name)}${a.mode === "collective" ? " · Sammelkonto" : a.mode === "hidden" ? " · Buchhaltung" : a.isEvent ? " · Veranstaltung" : ""}</span>
+      ${eventBalanceLabel(a, eur) ? `<span>${eventBalanceLabel(a, eur)}</span>` :
+        `<span class="${a.balance >= 0 ? "amount-pos" : "amount-neg"}">${eur(a.balance)}</span>`}</summary>
+      <div class="body"></div>`;
+    const body = det.querySelector(".body");
+    if (a.mode === "direct" || a.mode === "personal") {
+      const del = document.createElement("button");
+      del.className = "btn small";
+      del.style.margin = "8px 0";
+      del.textContent = "Veranstaltung löschen";
+      del.onclick = async () => {
+        if (!confirm(`„${a.name}“ löschen? Die Buchungen bleiben für den GnuCash-Export erhalten.`)) return;
+        const r = await fetch("/api/admin/events/delete", { method: "POST", headers: authH(), body: JSON.stringify({ id: a.id }) });
+        const d = await r.json();
+        if (!r.ok) return toast(d.error);
+        toast("Veranstaltung gelöscht ✓");
+        loadRoleDash();
+      };
+      body.appendChild(del);
+    }
+    if (!tx.length) body.insertAdjacentHTML("beforeend", '<span class="muted">Keine Buchungen.</span>');
+    else {
+      const bySem = {};
+      tx.forEach(t => { const s = semesterOf(t.date); (bySem[s] = bySem[s] || []).push(t); });
+      const curSem = semesterOf(new Date().toISOString());
+      Object.entries(bySem).forEach(([sem, stx]) => {
+        const semSum = stx.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
+        const semDet = document.createElement("details");
+        semDet.className = "daygroup semgroup";
+        if (sem === curSem) semDet.open = true;
+        semDet.innerHTML = `<summary><span>${sem}</span>
+          <span class="${semSum >= 0 ? "amount-pos" : "amount-neg"}">${semSum >= 0 ? "+" : "−"}${eur(Math.abs(semSum))}</span></summary>
+          <div class="body"></div>`;
+        const semBody = semDet.querySelector(".body");
+        body.appendChild(semDet);
+        const byDay = {};
+        stx.forEach(t => { const d = t.date.slice(0, 10); (byDay[d] = byDay[d] || []).push(t); });
+        Object.entries(byDay).forEach(([day, list]) => {
+          const sum = list.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
+          semBody.insertAdjacentHTML("beforeend", `
+            <div class="list-item"><strong class="gold-text">${new Date(day).toLocaleDateString("de-DE")}</strong>
+              <span class="${sum >= 0 ? "amount-pos" : "amount-neg"}">${sum >= 0 ? "+" : "−"}${eur(Math.abs(sum))}</span></div>
+            ${list.map(t => `<div class="list-item" style="padding-left:14px">
+              <span>${displayText(t.description)} <span class="muted" style="font-size:.8rem">${t.date.slice(11, 16)} Uhr</span></span>
+              <span class="${t.type === "deposit" ? "amount-pos" : "amount-neg"}">${t.type === "deposit" ? "+" : "−"}${eur(t.total)}</span>
+            </div>`).join("")}`);
+        });
+      });
+    }
+    el.appendChild(det);
+  });
+  if (!el.children.length) el.innerHTML = '<span class="muted">Kein Konto gefunden.</span>';
+}
+document.getElementById("roleDashSearch").oninput = renderRoleDash;
+
+/* --- XXX: GnuCash-Arbeitsbereich --- */
+let gnuWorkbench = null;
+
+mountAccountingActions({headers:authH, getAccounts:() => roleAccounts, afterImport:loadMe});
+
+ActiveMeals.init({
+  triggerId: "btnActiveMeal",
+  getToken: () => token,
+  getCreatorAccountId: () => me && me.id,
+  toast,
+  onCreated: () => loadMe()
+});
+userMealManager = ActiveMealManagement.init({
+  listId: "userManagedActiveMeals",
+  settingInputId: "xxxCardAccountUser",
+  subsidyInputId: "mealSubsidyUser",
+  settingInfoId: "xxxCardInfoUser",
+  saveSettingButtonId: "btnSaveXxxCardUser",
+  getHeaders: authH,
+  toast,
+  onChanged: loadMe
+});
+userAuditLog = AuditLog.init({
+  containerId: "userAuditLog",
+  getHeaders: authH,
+  autoLoad: false
+});
+init().catch(error => toast(error.message));
+</script>
+</body>
+</html>
