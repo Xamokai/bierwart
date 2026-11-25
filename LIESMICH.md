@@ -1,4 +1,4 @@
-# Bierwart LAN 1.11.0
+# Bierwart LAN 1.11.1
 
 ## Update einspielen
 
