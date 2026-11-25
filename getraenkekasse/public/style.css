@@ -388,6 +388,7 @@ header.app h1 { letter-spacing: .09em; text-wrap: balance; }
 .admin-page table tbody tr:hover { background: var(--bg); }
 :is(.admin-page, .account-desktop) .tabs button[aria-current="page"] { color: white; background: var(--black); border-color: var(--black); }
 .admin-page #login { padding: 22px; }
+#tab-updates { overflow-wrap: anywhere; }
 .active-meal-fields > *, .participant-row > * { min-width: 0; }
 .active-meal-fields { grid-template-columns: minmax(190px, 1.35fr) repeat(3, minmax(0, 1fr)); }
 .participant-roles { gap: 4px; }

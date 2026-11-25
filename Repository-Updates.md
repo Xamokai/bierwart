@@ -23,13 +23,23 @@ git push origin v1.10.1 v1.11.0 v1.11.1
 
 Für ein privates Repository braucht das Serverkonto Git-Lesezugriff über HTTPS. Diesen einmalig im Credential-Helper des Serverkontos einrichten. Die Adresse in der Verwaltung enthält weder Token noch Passwort. Ein bereits befülltes Repository kann ebenfalls verwendet werden. Die Tags müssen auf Bierwart-Quellstände mit der passenden Versionsnummer zeigen.
 
+## Von 1.11.1 auf 1.11.2 aktualisieren
+
+Für das Release aus `https://github.com/Xamokai/bierwart.git` auf dem Kassenserver einmalig diese Zeile in `getraenkekasse/update-manager/local-signers` ergänzen. Die Datei bei Bedarf anlegen.
+
+```text
+bierwart namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHBE0J+mi7Ak+U9xOv6/Df3szVEMN+HN1JAjvTwKTTiE bierwart-release
+```
+
+Unter **Verwaltung → Software-Updates** das Repository auswählen, **Nach Updates suchen** drücken und **v1.11.2** aktivieren. Nach der Aktivierung die Verwaltung öffnen. Software-Updates stehen dort als Reiter neben Übersicht und Konten zur Verfügung.
+
 ## Version auswählen oder zurückwechseln
 
 **Nach Updates suchen** liest die Tags des gespeicherten Repositories. Die höchste Versionsnummer steht zuerst. Zum Wechsel eine Version auswählen, **Ausgewählte Version aktivieren** drücken und bestätigen. Über das Adressfeld lässt sich jederzeit ein anderes Repository speichern. Anschließend die Suche wiederholen. Bereits installierte Versionen stehen auch bei nicht erreichbarem Repository zur Verfügung.
 
 Beim Laden läuft die Kasse weiter. Vor dem Wechsel schließt sie laufende Anfragen ab und sichert `data`, `assets` und `config.json` unter `getraenkekasse/.bierwart/backups/`. Dann startet sie die gewählte Version und prüft die Konten- und Produkt-API. Erst danach nimmt sie wieder Buchungen an. Eine fehlgeschlagene Aktivierung stellt den unmittelbar zuvor gesicherten Bestand wieder her. Der nächste Start verarbeitet auch einen durch Stromausfall unterbrochenen Wechsel.
 
-Ein bewusst gewählter Rückwechsel verwendet **den aktuellen Kassenbestand**. Bereits gebuchte Striche bleiben erhalten. Die Version muss das Datenformat der Installation unterstützen. Format 1 ist für den Ausgangsstand 1.10.1 bis 1.11.1 vorgesehen. Künftige Releases mit anderem Format benötigen eine eigene Datenmigration.
+Ein bewusst gewählter Rückwechsel verwendet **den aktuellen Kassenbestand**. Bereits gebuchte Striche bleiben erhalten. Die Version muss das Datenformat der Installation unterstützen. Die Versionen 1.10.1 bis 1.11.2 verwenden Format 1. Künftige Releases mit anderem Format benötigen eine eigene Datenmigration.
 
 Mitglieder melden sich nach dem Neustart erneut an. Der direkte Verwaltungslink `/updates/` funktioniert auch bei einer älteren Kassenoberfläche und bei einem Startfehler der Kasse. Die Zugangsdaten entsprechen der Verwaltungs-PIN. Sicherungen und lokale Programmversionen bleiben bis zur manuellen Bereinigung auf dem Server. Den Datenordner zusätzlich wie bisher auch außerhalb des Servers sichern.
 

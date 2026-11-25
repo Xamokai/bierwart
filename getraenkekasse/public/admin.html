@@ -37,7 +37,7 @@
       <button class="btn" data-tab="bar">Schnapswart</button>
       <button class="btn" data-tab="audit">Änderungsprotokoll</button>
       <button class="btn" data-tab="gnucash">GnuCash Import / Export</button>
-      <a class="btn" href="/updates/">Software-Updates</a>
+      <button class="btn" data-tab="updates">Software-Updates</button>
     </nav>
 
     <!-- Übersicht: Käufe je Konto, gruppiert nach Datum -->
@@ -170,6 +170,34 @@
         <pre class="muted" id="impResult" style="white-space:pre-wrap"></pre></details>
       </div>
     </div>
+    <div id="tab-updates" style="display:none">
+      <div class="card">
+        <h3>Installierte Version</h3>
+        <strong id="updateActive"></strong>
+        <div class="muted" id="updateOrigin"></div>
+      </div>
+      <div class="card">
+        <h3>Update-Quelle</h3>
+        <form id="updateSource">
+          <label for="updateRepo">HTTPS-Adresse des Git-Repositories</label>
+          <div class="row">
+            <input class="grow" id="updateRepo" type="url" required disabled>
+            <button class="btn" id="updateSave" disabled>Speichern</button>
+            <button class="btn gold" type="button" id="updateCheck" disabled>Nach Updates suchen</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Version wählen</h3>
+        <label for="updateVersions">Veröffentlichte und lokal vorhandene Versionen</label>
+        <div class="row">
+          <select class="grow" id="updateVersions" aria-describedby="updateDetail" disabled></select>
+          <button class="btn gold" id="updateInstall" disabled>Ausgewählte Version aktivieren</button>
+        </div>
+        <div class="muted" id="updateDetail"></div>
+      </div>
+      <p class="muted" role="status" id="updateMessage"></p>
+    </div>
   </section>
 </main>
 
@@ -182,6 +210,7 @@
 <script src="accounting-actions.js"></script>
 <script src="active-meal-management.js"></script>
 <script src="audit-log.js"></script>
+<script src="software-updates.js"></script>
 <script src="gnucash-workbench.js"></script>
 <script>
 const eur = n => n.toFixed(2).replace(".", ",") + " €";
@@ -189,6 +218,7 @@ let pin = sessionStorage.getItem("kasse_pin") || "";
 const H = () => ({ "X-Admin-Pin": pin, "Content-Type": "application/json" });
 
 const barManager = mountBarManager(document.getElementById("tab-bar"),H);
+const updates = mountSoftwareUpdates(H);
 
 /* Login */
 async function tryLogin(p) {
@@ -219,8 +249,9 @@ document.querySelectorAll(".tabs [data-tab]").forEach(b => b.onclick = () => {
   document.querySelectorAll(".tabs [data-tab]").forEach(x => x.removeAttribute("aria-current"));
   b.setAttribute("aria-current", "page");
   if (b.dataset.tab === "bar") barManager.refresh();
-  ["dash", "accounts", "events", "products", "bar", "audit", "gnucash"].forEach(t =>
-    document.getElementById("tab-" + t).style.display = (b.dataset.tab === t ? "" : "none"));
+  document.querySelectorAll("#panel > [id^='tab-']").forEach(panel =>
+    panel.style.display = panel.id === "tab-" + b.dataset.tab ? "" : "none");
+  updates.setVisible(b.dataset.tab === "updates");
 });
 
 let accounts = [], transactions = [], products = [], kinds = [];
