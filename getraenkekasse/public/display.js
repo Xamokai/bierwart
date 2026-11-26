@@ -1,12 +1,14 @@
-const hyphenateGerman = createHyphenator(hyphenationPatternsDe1996, {minWordLength:7});
+const hyphenateGerman = typeof createHyphenator === "function" && typeof hyphenationPatternsDe1996 !== "undefined"
+  ? createHyphenator(hyphenationPatternsDe1996, {minWordLength:7}) : null;
 function wrapName(name) {
   // Prefer a longer last syllable group on narrow tiles, even with a browser
   // that lacks a German dictionary or ignores CSS hyphenation limits.
-  return hyphenateGerman(name).replace(/\u00ad(?=\p{L}{1,2}(?![\p{L}\u00ad]))/gu, "");
+  if (!hyphenateGerman) return name;
+  return hyphenateGerman(name).replace(/\u00ad(?=[A-Za-zÀ-ÖØ-öø-ÿẞ]{1,2}(?![A-Za-zÀ-ÖØ-öø-ÿẞ\u00ad]))/g, "");
 }
 
 function displayText(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  return String(value == null ? "" : value).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 document.addEventListener("error", event => {
   if (event.target instanceof HTMLImageElement) event.target.style.visibility="hidden";

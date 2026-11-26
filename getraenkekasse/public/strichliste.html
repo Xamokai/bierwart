@@ -14,7 +14,7 @@
     <button class="btn" id="btnEventDrinks" disabled>Temporäre Getränke</button>
     <button class="btn gold" id="btnActiveMeal">Aktivenessen anlegen</button>
   </div>
-  <div id="names" aria-label="Konten"></div>
+  <div id="names" aria-label="Konten"><p class="muted" role="status">Konten werden geladen …</p></div>
 </main>
 <nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html">Mein Konto</a><a href="admin.html">Verwaltung</a></nav>
 
@@ -39,11 +39,11 @@
 <script>
 const $ = id => document.getElementById(id);
 const eventId = new URLSearchParams(location.search).get("event");
-let accounts = [], shared = [], currentEvent = null, current = null;
+let accounts = null, shared = [], currentEvent = null, current = null;
 let loadNumber = 0;
 const order = mountOrder({
   grid:$("sheetProducts"), sum:$("sheetSum"), tally:$("sheetTally"), reset:$("btnReset"), submit:$("btnBook"),
-  book:items => BW.post("/api/purchase", {accountId:current.id, ...(eventId ? {eventId} : {}), items}),
+  book:items => BW.post("/api/purchase", {accountId:current.id, eventId:eventId || undefined, items}),
   onRejected:load,
   onBooked:async () => { modal.close(); BW.toast("Gebucht für " + current.name + "."); await load(); }
 });
@@ -55,12 +55,13 @@ function openSheet(account) {
   modal.open();
 }
 function renderNames() {
+  if (!accounts) return;
   const q = $("search").value.trim().toLocaleLowerCase("de");
   const titles = {collective:"Sammelkonten", priority:"Priorisierte Konten", recent:"In den letzten 7 Tagen gebucht", other:"Weitere Konten"};
-  $("names").replaceChildren();
+  $("names").textContent = "";
   let grid, currentGroup;
   for (const a of accounts) {
-    if (q ? ![a.name, a.fullName].some(n => n?.toLocaleLowerCase("de").includes(q)) : a.group === "other") continue;
+    if (q ? ![a.name, a.fullName].some(n => n && n.toLocaleLowerCase("de").includes(q)) : a.group === "other") continue;
     if (a.group !== currentGroup) {
       currentGroup = a.group;
       const section = document.createElement("section");
@@ -97,10 +98,12 @@ async function load() {
     if (!order.busy) modal.close();
     throw Error("Diese Veranstaltungsstrichliste ist nicht verfügbar.");
   }
-  accounts = names; shared = drinks;
+  shared = drinks;
   $("btnBarCard").hidden = !currentEvent;
   if (currentEvent) $("pageTitle").textContent = wrapName(currentEvent.name);
-  order.setProducts(products.filter(p => p.tally).slice(0, 5).concat(shared, currentEvent?.customDrinks || [], currentEvent?.barDrinks || []));
+  const eventDrinks = currentEvent ? (currentEvent.customDrinks || []).concat(currentEvent.barDrinks || []) : [];
+  order.setProducts(products.filter(p => p.tally).slice(0, 5).concat(shared, eventDrinks));
+  accounts = names;
   $("btnNew").disabled = $("btnEventDrinks").disabled = false;
   renderNames();
 }
@@ -118,9 +121,15 @@ if (eventId) {
   $("pageTitle").textContent = "Veranstaltungsstrichliste";
   $("tallyNav").removeAttribute("aria-current"); $("eventsNav").setAttribute("aria-current", "page");
 } else ActiveMeals.init({triggerId:"btnActiveMeal", toast:BW.toast, onCreated:() => load().catch(e => BW.toast(e.message))});
-load().catch(e => BW.toast(e.message));
+function refresh() {
+  load().catch(error => {
+    if (!accounts) $("names").textContent = error.message;
+    else BW.toast(error.message);
+  });
+}
+refresh();
 setInterval(() => {
   if (!document.hidden && !document.querySelector("dialog[open]"))
-    load().catch(e => BW.toast(e.message));
+    refresh();
 }, 30000);
 </script></body></html>

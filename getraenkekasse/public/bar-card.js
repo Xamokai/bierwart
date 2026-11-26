@@ -19,7 +19,7 @@ function mountEventCard(trigger,getEvent,reload) {
     const ev=getEvent();if (!ev || ev.id!==eventId) throw Error("Veranstaltung nicht mehr verfügbar.");
     const recipes=await BW.api("/api/bar/offer");
     dialog.querySelector("[data-event-name]").textContent=ev.name;
-    prints.replaceChildren();list.replaceChildren();button.disabled=true;
+    prints.textContent = ""; list.textContent = ""; button.disabled = true;
     const assigned=new Set(ev.barDrinks.map(r=>r.recipeId));
     if (assigned.size) {
       for(const [key,label] of [["mixliste","Mixliste (PDF)"],["preisliste","Preisliste (PDF)"]]) {

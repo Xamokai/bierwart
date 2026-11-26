@@ -102,7 +102,7 @@ window.ActiveMeals = (() => {
       if (!r.ok) throw new Error("Konten konnten nicht geladen werden");
       const d = await r.json();
       state.accounts = d.accounts || [];
-      state.subsidyPerPerson = Math.round((d.subsidyPerPerson ?? 4) * 100);
+      state.subsidyPerPerson = Math.round((d.subsidyPerPerson == null ? 4 : d.subsidyPerPerson) * 100);
       state.xxxCard = d.xxxCard || { accountNumber: "" };
       const cardLabel = state.xxxCard.accountNumber
         ? `XXX-Karte · ${state.xxxCard.accountNumber}`
@@ -116,7 +116,7 @@ window.ActiveMeals = (() => {
       state.participants.push({ accountId: account.id, name: account.name, price: "",
         collective:account.collective, role:account.collective ? "kgast" : "voll" });
       personInput.value = "";
-      matches.replaceChildren();
+      matches.textContent = "";
       renderParticipants();
     }
 
@@ -126,7 +126,7 @@ window.ActiveMeals = (() => {
         && !state.participants.some(p => p.accountId === a.id)) : [];
     }
     function renderMatches() {
-      matches.replaceChildren();
+      matches.textContent = "";
       const list = matchingAccounts();
       for (const a of list.slice(0, 8)) {
         const button = document.createElement("button");
@@ -147,12 +147,12 @@ window.ActiveMeals = (() => {
     function split() {
       try {
         const total = centsOf(totalInput.value);
-        const split = splitActiveMeal(total, state.participants.map(p => ({...p, cents:centsOf(p.price)})), state.subsidyPerPerson);
+        const split = splitActiveMeal(total, state.participants.map(p => Object.assign({}, p, {cents:centsOf(p.price)})), state.subsidyPerPerson);
         const difference = split.difference;
         const message = difference
           ? (difference > 0 ? `Noch ${eur(difference)} offen.` : `Einzelbeträge sind ${eur(-difference)} zu hoch.`)
           : `Zuschuss pro Aktiv/K-Gast ${eur(state.subsidyPerPerson)} · Zuschuss gesamt ${eur(split.subsidy)} · Kostenanteile ${eur(total-split.subsidy)}.`;
-        return {...split, valid:difference === 0, message};
+        return Object.assign({}, split, {valid:difference === 0, message});
       } catch (error) {
         return {rows:[], difference:null, valid:false, message:error.message};
       }
@@ -233,12 +233,12 @@ window.ActiveMeals = (() => {
       nameInput.value = "";
       dateInput.value = todayLocal();
       totalInput.value = "";
-      extra.replaceChildren();
+      extra.textContent = "";
       const id = creatorId();
       payerInput.value = id && state.accounts.some(a => a.id === id) ? `account:${id}` : "xxx-card";
       updatePayerHint();
       personInput.value = "";
-      matches.replaceChildren();
+      matches.textContent = "";
       renderFiles();
       renderParticipants();
     }
@@ -272,7 +272,7 @@ window.ActiveMeals = (() => {
     async function uploadFile(file) {
       const params = new URLSearchParams({ name: file.name || "rechnung", type: file.type || "" });
       const r = await fetch(`/api/active-meals/upload?${params}`, {
-        method: "POST", headers: { ...headers(false), "Content-Type": "application/octet-stream" }, body: file
+        method: "POST", headers: Object.assign(headers(false), {"Content-Type":"application/octet-stream"}), body: file
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || `Upload von ${file.name || "Bild"} fehlgeschlagen`);
@@ -283,7 +283,7 @@ window.ActiveMeals = (() => {
       const row=document.createElement("div");row.className="row";
       row.innerHTML='<select aria-label="Weiterer Ausleger"></select><input aria-label="Auslage in Euro" inputmode="decimal" placeholder="Auslage in €"><button type="button" class="btn">Entfernen</button>';
       row.className = "extra-payer";
-      row.querySelector("select").replaceChildren(...state.accounts.filter(a => !a.collective).map(a=>new Option(a.name,a.id)));
+      row.querySelector("select").append(...state.accounts.filter(a => !a.collective).map(a=>new Option(a.name,a.id)));
       row.querySelector("button").onclick=()=>row.remove();
       extra.append(row);
     };

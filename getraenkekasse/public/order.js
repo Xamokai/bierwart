@@ -38,7 +38,8 @@ function mountOrder({grid, sum, tally, reset, submit, book, onBooked, onRejected
   function setProducts(products) {
     const catalog = new Map(products.map(p => [p.name, p]));
     for (const name of quantities.keys()) {
-      if (!catalog.has(name) || catalog.get(name).price !== tiles.get(name)?.product.price || catalog.get(name).recipeId !== tiles.get(name)?.product.recipeId) {
+      const product = catalog.get(name), previous = tiles.get(name);
+      if (!product || !previous || product.price !== previous.product.price || product.recipeId !== previous.product.recipeId) {
         quantities.delete(name);
         BW.toast("Das Angebot hat sich geändert. Bitte die Auswahl prüfen.");
       }
@@ -48,7 +49,7 @@ function mountOrder({grid, sum, tally, reset, submit, book, onBooked, onRejected
       return tile && tile.element === grid.children[i] && tile.product.price === p.price && tile.product.recipeId === p.recipeId && tile.product.image === p.image;
     });
     if (!same) {
-      grid.replaceChildren();
+      grid.textContent = "";
       tiles.clear();
       for (const product of products) {
         const {name, price} = product;

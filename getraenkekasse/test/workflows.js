@@ -447,11 +447,22 @@ test("Startseite unterscheidet Geräte und respektiert direkte Strichlistenlinks
   assert.equal(destination("iPhone", 844, 390, true), "user.html");
   assert.equal(destination("Android 15 Mobile Safari", 915, 412, true), "user.html");
   assert.equal(destination("Android 13 Tablet", 600, 960, true), "strichliste.html");
+  assert.equal(destination("Android 9; KFMAWI Build/PS7327; wv) Version/4.0 Chrome/70.0 Mobile Safari/537.36", 1280, 800, true), "strichliste.html");
   assert.equal(destination("Macintosh", 1366, 1024, true), "strichliste.html");
   assert.equal(destination("Macintosh", 1366, 1024, true, "", false), "strichliste.html");
   assert.equal(destination("Other", 800, 1280, true), "strichliste.html");
   assert.equal(destination("iPhone", 390, 844, true, "?strichliste=1"), "strichliste.html?strichliste=1");
   assert.equal(destination("Macintosh", 1440, 900, false, "?event=abc"), "strichliste.html?event=abc");
+});
+
+test("Kontonamen bleiben auch bei fehlender Silbentrennung lesbar", () => {
+  const vm = require("node:vm");
+  const display = fs.readFileSync(path.join(root, "public", "display.js"), "utf8");
+  const context = {document:{addEventListener() {}}};
+  const name = "Himmelfahrtsbummel";
+  for (const vendor of [{}, {createHyphenator:require("hyphen/hyphen.js")}, {hyphenationPatternsDe1996:require("hyphen/patterns/de-1996.js")}]) {
+    assert.equal(vm.runInNewContext(display + "\nwrapName(name)", {...context,...vendor,name}), name);
+  }
 });
 
 test("Aktivenessen auf dem Originalformular mit genau 18 Zeilen und Fortsetzung", async () => {

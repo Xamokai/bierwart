@@ -31,7 +31,7 @@ function mountTemporaryDrinks({trigger, reload, getShared, getEvent}) {
 
   function render() {
     const list = sheet.querySelector(".temporary-list");
-    list.replaceChildren();
+    list.textContent = "";
     const append = (drink, local) => {
       const row = document.createElement("div");
       row.className = "list-item drink-line";
@@ -52,7 +52,8 @@ function mountTemporaryDrinks({trigger, reload, getShared, getEvent}) {
       list.append(row);
     };
     getShared().forEach(d => append(d, false));
-    (getEvent()?.customDrinks || []).forEach(d => append(d, true));
+    const event = getEvent();
+    if (event) (event.customDrinks || []).forEach(d => append(d, true));
     if (!list.childElementCount) list.textContent = "Keine temporären Getränke vorhanden.";
   }
   async function change(path, body, action) {

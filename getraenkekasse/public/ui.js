@@ -6,14 +6,14 @@ const BW = (() => {
   async function api(path, options) {
     let response;
     try { response = await fetch(path, options); }
-    catch { throw Error("Keine Verbindung zum BW-Server. Bitte den Verbindungsstatus prüfen."); }
+    catch (error) { throw Error("Keine Verbindung zum BW-Server. Bitte den Verbindungsstatus prüfen."); }
     const result = await response.json().catch(() => null);
-    if (!response.ok || result === null) throw Error(result?.error || "Der BW-Server konnte die Anfrage nicht beantworten.");
+    if (!response.ok || result === null) throw Error((result && result.error) || "Der BW-Server konnte die Anfrage nicht beantworten.");
     return result;
   }
 
   const post = (path, body, headers = {}) => api(path, {
-    method: "POST", headers: {"Content-Type":"application/json", ...headers}, body: JSON.stringify(body)
+    method: "POST", headers: Object.assign({"Content-Type":"application/json"}, headers), body: JSON.stringify(body)
   });
 
   let timer;

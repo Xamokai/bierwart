@@ -60,7 +60,8 @@ function renderEventGroups(events) {
     section.append(heading, grid);
     return section;
   });
-  container.replaceChildren(...groups);
+  container.textContent = "";
+  container.append(...groups);
   if (!groups.length) container.textContent = "Noch keine Veranstaltung angelegt.";
 }
 let loadNumber = 0;
@@ -72,7 +73,7 @@ async function load() {
   if (number !== loadNumber) return;
   kinds = templates; shared = drinks;
   current = events.find(e => e.id === eventId);
-  if (current?.mode === "personal") { location.replace(eventUrl(current)); return; }
+  if (current && current.mode === "personal") { location.replace(eventUrl(current)); return; }
   $("pick").hidden = !!current; $("book").hidden = !current;
   if (current) {
     $("evName").textContent = wrapName(current.name);
@@ -88,7 +89,7 @@ const form = $("sheet").querySelector("form");
 const submit = form.querySelector("button");
 const modal = BW.dialog($("sheet"), () => !submit.disabled);
 $("btnNewEv").onclick = () => {
-  const today = new Date().toLocaleDateString("de-DE"); form.reset(); $("kindChips").replaceChildren();
+  const today = new Date().toLocaleDateString("de-DE"); form.reset(); $("kindChips").textContent = "";
   for (const kind of kinds) {
     const b = document.createElement("button");
     b.className = "btn small"; b.textContent = kind;

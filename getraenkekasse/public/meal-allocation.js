@@ -15,7 +15,7 @@
       const manual = person.cents !== null;
       if (manual && (!Number.isSafeInteger(person.cents) || person.cents < 0))
         throw Error("Betrag für " + person.name + " prüfen.");
-      return {...person, role, manual, grant, cents:manual ? person.cents : fullShare - grant};
+      return Object.assign({}, person, {role, manual, grant, cents:manual ? person.cents : fullShare - grant});
     });
     const subsidy = rows.reduce((sum, row) => sum + row.grant, 0);
     const guestShare = rows.reduce((sum, row) => sum + (row.collective ? row.cents : 0), 0);
