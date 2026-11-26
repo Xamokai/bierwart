@@ -55,6 +55,17 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
     </div>
 
     <details class="daygroup">
+      <summary><strong>Sammelkonten der Strichliste</strong></summary>
+      <form class="body stack-form" id="collectiveForm">
+        <label>Sammelkonto<select id="collectivePick"><option value="">Neues Sammelkonto</option></select></label>
+        <label>Name auf der Strichliste<input id="collectiveName" maxlength="120" required></label>
+        <label>GnuCash-Kontonummer oder vollständiger Kontopfad<input id="collectiveTarget" maxlength="800" placeholder="z. B. 1800" required></label>
+        <div class="row"><button class="btn gold" id="collectiveSave">Anlegen</button>
+          <button class="btn" id="collectiveDelete" type="button" hidden>Löschen</button></div>
+      </form>
+    </details>
+
+    <details class="daygroup">
       <summary><strong>Kontenzuordnung (GnuCash-Kontopfade)</strong><span class="muted">▾</span></summary>
       <div class="body" id="gnuSettings"></div>
       <div class="body"><label for="bwPerson">BW-Konto</label><select id="bwPerson"></select>
@@ -86,6 +97,44 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
       a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);
     }catch(e){toast(e.message);}
   }
+
+  const collectiveUrl = "/api/admin/collectives";
+  const picker = $("collectivePick");
+  let collectives = [];
+  function showCollective() {
+    const account = collectives.find(a => a.id === picker.value);
+    $("collectiveName").value = account?.name || "";
+    $("collectiveTarget").value = account?.target || "";
+    $("collectiveSave").textContent = account ? "Speichern" : "Anlegen";
+    $("collectiveDelete").hidden = !account;
+  }
+  picker.onchange = showCollective;
+  async function loadCollectives(selected = picker.value) {
+    collectives = await api(collectiveUrl);
+    picker.replaceChildren(new Option("Neues Sammelkonto",""), ...collectives.map(a => new Option(a.name,a.id)));
+    picker.value = collectives.some(a => a.id === selected) ? selected : "";
+    showCollective();
+  }
+  async function changeCollective(remove) {
+    const id = picker.value;
+    const name = $("collectiveName").value.trim();
+    if (remove && !confirm("Sammelkonto „" + picker.selectedOptions[0].text + "“ löschen? Bisherige Buchungen bleiben erhalten.")) return;
+    const save = $("collectiveSave"), del = $("collectiveDelete");
+    if (save.disabled) return;
+    save.disabled = del.disabled = picker.disabled = true;
+    try {
+      const result = await api(collectiveUrl + (id ? "/" + encodeURIComponent(id) : ""), {
+        method:remove ? "DELETE" : id ? "PUT" : "POST",
+        body:remove ? undefined : JSON.stringify({name, target:$("collectiveTarget").value.trim()})
+      });
+      await loadCollectives(remove ? "" : result.id);
+      if (onImported) await onImported(); else await loadMappings();
+      toast(remove ? "Sammelkonto gelöscht." : "Sammelkonto gespeichert.");
+    } catch (error) { toast(error.message); }
+    finally { save.disabled = del.disabled = picker.disabled = false; }
+  }
+  $("collectiveForm").onsubmit = e => { e.preventDefault(); changeCollective(false); };
+  $("collectiveDelete").onclick = () => changeCollective(true);
 
   /* ---------- Buchungsläufe ---------- */
   async function loadRuns() {
@@ -311,7 +360,7 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
     }catch(e){toast(e.message);$("bookApply").disabled=false;}finally{$("bookFile").disabled=false;}
   };
   async function refresh() {
-    try { await Promise.all([loadRuns(), loadLedger(), loadSettings(), loadMappings()]); }
+    try { await Promise.all([loadRuns(), loadLedger(), loadSettings(), loadMappings(), loadCollectives()]); }
     catch (e) { toast(e.message); }
   }
   clearForm();

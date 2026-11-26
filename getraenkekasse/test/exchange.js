@@ -66,7 +66,7 @@ test("Kneipen-Vorlage bleibt bei den bereits zugeordneten Kürzeln eindeutig",()
   assert.equal(result.plans[0].id,"alle");
 });
 
-test("Couleur verwendet 1800 zusätzlich zum importierten Philisterkonto", () => {
+test("Couleur und SHV teilen Konto 1800. Der Import respektiert Änderungen und Löschung", () => {
   const db = state();
   const target = "Bestand:1800 Verrechnungskonto Philisterverein";
   const couleur = {id:"couleur", name:"Couleur", isEvent:true, fixedBookCode:"1800"};
@@ -76,11 +76,18 @@ test("Couleur verwendet 1800 zusätzlich zum importierten Philisterkonto", () =>
   const book = asBook([{path:target,code:"1800",type:"ASSET"}]);
   const first = planAccounts(book,db,g);
   assert.deepEqual(first.conflicts, []);
-  const philister = first.plans[0];
-  assert.equal(philister.name, "Verrechnung Philister");
-  assert.notEqual(philister.id, couleur.id);
-  db.accounts.push({...philister,isEvent:true,gnucashAccount:target});
-  assert.equal(planAccounts(book,db,g).resolved.get(target).id, philister.id);
+  const shv = first.plans[0];
+  assert.equal(shv.name, "SHV");
+  assert.notEqual(shv.id, couleur.id);
+  const existing = {...shv, name:"SHV Haus", isEvent:true, fixedBookCode:"1800", collectiveTarget:"4620", gnucashAccount:target};
+  db.accounts.push(existing);
+  for (const deleted of [false,true]) {
+    existing.deleted = deleted;
+    const result = planAccounts(book,db,g);
+    assert.deepEqual(result.conflicts, []);
+    assert.equal(result.resolved.get(target).id, shv.id);
+    assert.equal(result.plans[0].action, "known");
+  }
 });
 
 test("Essenszuschuss wird auf den Cent und höchstens bis zum eigenen Anteil berechnet", () => {

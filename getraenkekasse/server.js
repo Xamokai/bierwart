@@ -89,18 +89,23 @@ function bookCode(path) {
   return String(code || "").trim() || codeOf(path) || (/^\d+$/.test(leaf(path)) ? leaf(path) : "");
 }
 
+function resolveCollectiveTarget(target, preferredPath) {
+  if (!/^\d+$/.test(target)) return target;
+  const matches = path => path && bookCode(path) === target;
+  if (matches(preferredPath)) return preferredPath;
+  const paths = Object.keys(db.settings.bookCatalog || {}).filter(matches);
+  if (!paths.length && !db.settings.bookTreeLoaded) {
+    const assigned = db.accounts.filter(a => !a.deleted).flatMap(a => [a.gnucashAccount, a.collectiveTarget]);
+    paths.push(...new Set(assigned.filter(path => matches(path) && path !== target)));
+  }
+  return paths.length === 1 ? paths[0] : "";
+}
+
 /* Kontopfad eines Mitglieds-/Veranstaltungskontos für GnuCash */
 function gnucashAccountPath(acc) {
   if (!acc) return "?";
-  if (acc.fixedBookCode) {
-    const matches = path => path && bookCode(path) === acc.fixedBookCode;
-    if (matches(acc.gnucashAccount)) return acc.gnucashAccount;
-    const paths = Object.keys(db.settings.bookCatalog || {}).filter(matches);
-    if (!paths.length && !db.settings.bookTreeLoaded) {
-      paths.push(...new Set(db.accounts.filter(a => !a.deleted).map(a => a.gnucashAccount).filter(matches)));
-    }
-    return paths.length === 1 ? paths[0] : "";
-  }
+  const target = acc.collectiveTarget || acc.fixedBookCode;
+  if (target) return resolveCollectiveTarget(target, acc.gnucashAccount);
   if (acc.gnucashAccount) return acc.gnucashAccount;          // manuell überschrieben
   if (acc.isEvent) return `${gnu().eventAccount}:${acc.name}`;
   return gnu().useMemberPrefix ? `${gnu().memberPrefix}:${acc.name}` : acc.name;
@@ -322,15 +327,31 @@ function ensureEventTemplates() {
   saveDB(db);
 }
 
-function ensureCouleurAccount() {
-  if (db.accounts.some(a => a.fixedBookCode === "1800")) return;
-  let account = db.accounts.find(a => a.isEvent && !a.deleted && a.name.trim().toLowerCase() === "couleur");
-  if (!account) {
-    account = {id:newId(), name:"Couleur", isEvent:true, customDrinks:[], createdAt:new Date().toISOString()};
-    db.accounts.push(account);
+const collectiveSources = {SHV:"1800", Gast:"4730", Löschbier:"4640", Arbeitseinsatz:"4620", Barzahler:"cash"};
+function migrateCollectiveAccounts() {
+  if (db.settings.collectiveAccounts114) return;
+  for (const account of db.accounts.filter(a => eventMode(a) === "collective")) {
+    const label = tallyLabel(account);
+    if (label !== "SHV" && Object.hasOwn(collectiveSources, label)) account.collectiveSource = collectiveSources[label];
   }
-  account.permanent = true;
-  account.fixedBookCode = "1800";
+  for (const name of ["Couleur", "SHV"]) {
+    const existing = db.accounts.filter(a => a.isEvent && tallyLabel(a) === name);
+    let account = existing.find(a => !a.deleted && a.gnucashAccount) || existing.find(a => !a.deleted);
+    if (!account) {
+      account = {id:newId(), name, isEvent:true, customDrinks:[], createdAt:new Date().toISOString()};
+      db.accounts.push(account);
+    } else if (name === "SHV") preserveCollectivePostings(account, "1800");
+    account.permanent = true;
+    account.fixedBookCode = "1800";
+    if (name === "SHV") {
+      account.name = "SHV";
+      account.collectiveSource = "1800";
+      for (const previous of existing) {
+        if (previous !== account) previous.deleted = true;
+      }
+    }
+  }
+  db.settings.collectiveAccounts114 = true;
   saveDB(db);
 }
 /* ---------- Produkte aus CSV (assets/res/products.csv) ---------- */
@@ -384,11 +405,14 @@ app.use((req,res,next) => {
 app.use(express.json({ limit: "5mb" }));
 app.use(express.text({ type: ["text/csv", "text/plain"], limit: "10mb" }));
 app.use(express.raw({ type: "application/octet-stream", limit: "15mb" }));
+const hyphenFiles = {root:path.dirname(require.resolve("hyphen/hyphen.js")), maxAge:"1d"};
+app.get("/vendor/hyphen.js", (req,res) => res.sendFile("hyphen.js", hyphenFiles));
+app.get("/vendor/hyphen-de.js", (req,res) => res.sendFile("patterns/de-1996.js", hyphenFiles));
 app.use("/assets", express.static(path.join(ROOT, "assets")));
 app.use(express.static(path.join(ROOT, "public")));
 ensureSeedEvents();
 ensureEventTemplates();
-ensureCouleurAccount();
+migrateCollectiveAccounts();
 
 function requirePin(req, res, next) {
   if (req.get("X-Admin-Pin") === ADMIN_PIN) return next();
@@ -750,7 +774,7 @@ app.post("/api/active-meals/upload", optionalUser, (req, res) => {
  * von der öffentlichen Strichliste aus die konfigurierte XXX-Karte. */
 const mealSubsidyCents = () => db.settings.mealSubsidyCents ?? 400;
 function mealGuestAccount(account) {
-  return account.isEvent && (account.gnucashAccount === gnu().guestAccount ||
+  return account.isEvent && (account.collectiveSource === "4730" || account.gnucashAccount === gnu().guestAccount ||
     ["gast", "gast mitgliederwerbung", "mitgliederwerbung"].includes(normalizedName(account.name)));
 }
 
@@ -1287,6 +1311,7 @@ function eventTotals() {
 }
 
 function adminAccountNumber(account) {
+  if (account.collectiveTarget) return bookCode(account.collectiveTarget);
   if (account.fixedBookCode) return account.fixedBookCode;
   const path = account.gnucashAccount || (account.systemKind === "xxx-card" ? db.settings.xxxCardAccountNumber : "");
   if (!path) return "";
@@ -1494,11 +1519,11 @@ app.post("/api/admin/import", allow("gnucash"), (req, res) => {
 
 const localDate = iso => new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Berlin"}).format(new Date(iso));
 const cents = value => Math.round(Number(value) * 100);
-function accountPath(id) {
+function accountPath(id, previousTarget) {
   const a = db.accounts.find(a => a.id === id);
   if (!a) throw Error("Unbekanntes BW-Konto: " + id);
-  const path = gnucashAccountPath(a);
-  if (!path) throw Error("Für " + a.name + " den GnuCash-Kontopfad " + a.fixedBookCode + " zuordnen oder den Kontenbaum einlesen.");
+  const path = previousTarget ? resolveCollectiveTarget(previousTarget, a.gnucashAccount) : gnucashAccountPath(a);
+  if (!path) throw Error("Für " + a.name + " den GnuCash-Kontopfad " + (previousTarget || a.collectiveTarget || a.fixedBookCode) + " zuordnen oder den Kontenbaum einlesen.");
   return path;
 }
 function groupsFor(sel, number, summaryDate) {
@@ -1511,7 +1536,7 @@ function groupsFor(sel, number, summaryDate) {
   const accounts = new Map(db.accounts.map(account => [account.id, account]));
   for (const t of sel.purchases) {
     const amount = cents(t.total);
-    const member = accountPath(t.accountId);
+    const member = accountPath(t.accountId, t.collectivePostingTarget);
     const deposit = t.type === "deposit";
     let income = gnu().revenueDrinks;
     let eventName = "";
@@ -1605,20 +1630,85 @@ app.put("/api/admin/gnucash/settings", allow("gnucash"), (req, res) => {
 function assignableAccounts() {
   return db.accounts.filter(a => !a.deleted && !a.isSystem);
 }
+
+function collectiveView(a) {
+  return {id:a.id, name:tallyLabel(a), target:a.collectiveTarget || a.fixedBookCode || a.gnucashAccount || gnucashAccountPath(a)};
+}
+function activeCollective(id) {
+  return db.accounts.find(a => a.id === id && !a.deleted && !a.isSystem && eventMode(a) === "collective");
+}
+function preserveCollectivePostings(account, newTarget) {
+  const previous = gnucashAccountPath(account) || account.collectiveTarget || account.fixedBookCode;
+  if (/^\d+$/.test(previous) && bookCode(newTarget) === previous) return;
+  if (previous === newTarget || previous === resolveCollectiveTarget(newTarget, account.gnucashAccount)) return;
+  for (const tx of db.transactions) {
+    if (tx.accountId === account.id && !tx.exported && !tx.collectivePostingTarget) tx.collectivePostingTarget = previous;
+  }
+}
+const collectivesUrl = "/api/admin/collectives";
+app.get(collectivesUrl, allow("gnucash"), (req,res) => {
+  res.json(assignableAccounts().filter(a => eventMode(a) === "collective").map(collectiveView)
+    .sort((a,b) => a.name.localeCompare(b.name,"de")));
+});
+function saveCollective(req,res) {
+  const account = req.params.id ? activeCollective(req.params.id) : null;
+  if (req.params.id && !account) return res.status(404).json({error:"Sammelkonto nicht gefunden."});
+  const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+  const target = typeof req.body?.target === "string" ? req.body.target.trim() : "";
+  if (!name || name.length > 120 || /[\r\n]/.test(name))
+    return res.status(400).json({error:"Bitte einen Namen mit höchstens 120 Zeichen eingeben."});
+  if (!target || target.length > 800 || /[\r\n]/.test(target) || target.split(":").some(part => !part.trim()))
+    return res.status(400).json({error:"Bitte eine GnuCash-Kontonummer oder einen vollständigen Kontopfad eingeben."});
+  const key = value => value.trim().normalize("NFC").toLocaleLowerCase("de");
+  if (db.accounts.some(a => a !== account && !a.deleted && [a.name, tallyLabel(a)].some(n => key(n) === key(name))))
+    return res.status(409).json({error:"Dieser Kontoname ist bereits vergeben."});
+  const before = account ? collectiveView(account) : null;
+  const a = account || {id:newId(), isEvent:true, permanent:true, customDrinks:[], createdAt:new Date().toISOString()};
+  if (!account && Object.hasOwn(collectiveSources, name) && !db.accounts.some(other => other.collectiveSource === collectiveSources[name]))
+    a.collectiveSource = collectiveSources[name];
+  if (account) preserveCollectivePostings(account, target);
+  if (!account || before.name !== name) {
+    a.isCollective = true;
+    a.name = name;
+  }
+  a.collectiveTarget = target;
+  if (!account) db.accounts.push(a);
+  const after = collectiveView(a);
+  addAudit(req, account ? "collective.updated" : "collective.created", "Sammelkonto „" + name + "“ " + (account ? "geändert" : "angelegt"),
+    {type:"account", id:a.id, label:name}, before, after);
+  saveDB(db);
+  res.json(after);
+}
+app.post(collectivesUrl, allow("gnucash"), saveCollective);
+app.put(collectivesUrl + "/:id", allow("gnucash"), saveCollective);
+app.delete(collectivesUrl + "/:id", allow("gnucash"), (req,res) => {
+  const a = activeCollective(req.params.id);
+  if (!a) return res.status(404).json({error:"Sammelkonto nicht gefunden."});
+  a.deleted = true;
+  addAudit(req, "collective.deleted", "Sammelkonto „" + a.name + "“ gelöscht",
+    {type:"account", id:a.id, label:a.name}, collectiveView(a), null);
+  saveDB(db);
+  res.json({ok:true});
+});
 app.get("/api/admin/gnucash/accounts",allow("gnucash"),(req,res) => {
-  res.json(assignableAccounts().map(a=>({id:a.id, name:a.name, isEvent:!!a.isEvent, custom:a.gnucashAccount || "", path:gnucashAccountPath(a)})));
+  res.json(assignableAccounts().map(a=>({id:a.id, name:a.name, isEvent:!!a.isEvent, custom:a.collectiveTarget || a.gnucashAccount || "", path:gnucashAccountPath(a)})));
 });
 app.put("/api/admin/gnucash/accounts/:id",allow("gnucash"),(req,res) => {
   const a = assignableAccounts().find(a=>a.id===req.params.id);
   if (!a) return res.status(404).json({error:"BW-Konto fehlt."});
   const value = String(req.body.path || "").trim();
   if (value.length > 800 || /[\r\n]/.test(value)) return res.status(400).json({error:"Ungültiger Kontopfad."});
-  if (value && a.fixedBookCode && bookCode(value) !== a.fixedBookCode)
+  if (value && !a.collectiveTarget && a.fixedBookCode && bookCode(value) !== a.fixedBookCode)
     return res.status(400).json({error:"Für " + a.name + " den Kontopfad mit der Nummer " + a.fixedBookCode + " wählen."});
   if (value && assignableAccounts().some(b=>b.id!==a.id && !b.isEvent && !a.isEvent && gnucashAccountPath(b)===value))
     return res.status(409).json({error:"Pfad schon einer anderen Person zugeordnet."});
-  const old = a.gnucashAccount || "";
-  a.gnucashAccount = value;
+  const old = a.collectiveTarget || a.gnucashAccount || "";
+  if (eventMode(a) === "collective") {
+    if (!value && !a.collectiveSource && !a.fixedBookCode && !a.gnucashAccount)
+      return res.status(400).json({error:"Bitte ein GnuCash-Ziel für dieses Sammelkonto eingeben."});
+    preserveCollectivePostings(a, value || a.gnucashAccount || a.fixedBookCode || gnu().eventAccount + ":" + a.name);
+    a.collectiveTarget = value;
+  } else a.gnucashAccount = value;
   addAudit(req,"gnucash.account_mapping","GnuCash-Zuordnung geändert",{type:"account",id:a.id,label:a.name},{path:old},{path:value});
   saveDB(db);
   res.json({ok:true});

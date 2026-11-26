@@ -1,4 +1,4 @@
-# Bierwart LAN 1.11.3
+# Bierwart LAN 1.11.4
 
 ## Update einspielen
 
@@ -35,11 +35,13 @@ Ein dünner orangefarbener Rand kennzeichnet priorisierte Konten und bei der Ver
 | Einträge | Wo und wie gebucht wird |
 |---|---|
 | Abkneipe, Ankneipe, Stiftungsfestkneipe, Fuxenkneipe, Himmelfahrtsbummel, Kneipen, Stempferbummel, Stiftungstag, Stockwerksparty | Unter **Veranstaltung** auswählen und direkt auf das zugeordnete Konto buchen. Sonstige Anlässe mit Zuordnung auf 1800 oder 4150 verwenden ebenfalls die Direktbuchung. |
-| Arbeitseinsatz, Barzahler, Couleur, Gast, Löschbier, Philister | Diese Sammelkonten stehen oben auf der **Strichliste**. Couleur hat eine eigene Kachel und bucht auf GnuCash-Konto **1800**. Der Kontenbaum liefert den vollständigen Pfad. Er lässt sich auch unter **GnuCash Import / Export → Kontenzuordnung** hinterlegen. |
+| Arbeitseinsatz, Barzahler, Couleur, Gast, Löschbier, SHV | Diese Sammelkonten stehen oben auf der **Strichliste**. SHV ersetzt Philister und bucht wie Couleur auf GnuCash-Konto **1800**. |
 | Aktivenfahrt, Berg, Dürnstein, E/A-Konten, Feuerzangenbowle, Gansessen, Totengedenken, Weihnachten, Wissenschaftliche Abende | Im Kiosk ausgeblendet. Die Daten stehen für Auswertung und Buchhaltung weiterhin zur Verfügung. |
 | Cocktailabend/Sommerparty, Divali, Halloweenparty, Tresenbachelor, Stiftungsfestball | Unter **Veranstaltung** die Party öffnen. Es erscheint dieselbe Strichliste mit Namenskacheln und Suche wie im normalen Betrieb. Namen antippen, Getränke anstreichen und mit **Buchen** bestätigen. GnuCash belastet das Personenkonto und schreibt den Betrag dem Gegenkonto der Veranstaltung gut. Weitere Veranstaltungen ohne Sonderzuordnung verwenden ebenfalls die Personenstrichliste. |
 
 Unter den Sammelkonten stehen zuerst die priorisierten Personen und danach die Personen mit einem Getränkekauf in den vergangenen sieben Tagen. Jede Gruppe ist alphabetisch sortiert. Über die Suche findest du auch die übrigen Personen und die Langnamen der Sammelkonten. Bei Personenstrichlisten für Veranstaltungen erscheinen nur die Personengruppen.
+
+Unter **GnuCash Import / Export → Sammelkonten der Strichliste** können Verwaltung und XXX-Berechtigte ein Sammelkonto anlegen, umbenennen, sein GnuCash-Ziel ändern oder es löschen. Als Ziel eine Kontonummer aus dem eingelesenen Kontenbaum oder den vollständigen Kontopfad eingeben. Änderungen gelten für neue Buchungen. Gelöschte Konten verschwinden aus der Auswahl, ihre bisherigen Buchungen bleiben erhalten.
 
 Eine Getränkekachel fügt einen Strich hinzu. **−** nimmt einen einzelnen Strich zurück, **Zurücksetzen** leert die Auswahl. Erst **Buchen** schreibt die Buchung. Auf dem Handy lässt sich die Auswahl unter **Mein Konto → Getränke kaufen** öffnen.
 

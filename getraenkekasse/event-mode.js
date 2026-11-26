@@ -10,11 +10,12 @@ const collectiveLabels = new Map([
   ["arbeitseinsatz", "Arbeitseinsatz"], ["barzahler", "Barzahler"], ["bahrzahler", "Barzahler"],
   ["gast", "Gast"], ["gast mitgliederwerbung", "Gast"], ["mitgliederwerbung", "Gast"],
   ["loschbier", "Löschbier"], ["grillkohle", "Löschbier"], ["grillkohle loschbier", "Löschbier"],
-  ["loschbier grillkohle", "Löschbier"], ["verrechnung philister", "Philister"],
-  ["verrechnung philisterium", "Philister"], ["verrechnungskonto philisterverein", "Philister"],
+  ["loschbier grillkohle", "Löschbier"], ["verrechnung philister", "SHV"], ["philister", "SHV"],
+  ["verrechnung philisterium", "SHV"], ["verrechnungskonto philisterverein", "SHV"], ["shv", "SHV"],
   ["couleur", "Couleur"]
 ]);
 function tallyLabel(account) {
+  if (account.isCollective) return account.name;
   return (account.isEvent && collectiveLabels.get(normalizedName(account.name))) || account.name;
 }
 const hiddenNames = new Set([
@@ -28,6 +29,7 @@ function normalizedName(value) {
 }
 function eventMode(a) {
   if (!a.isEvent) return "person";
+  if (a.isCollective || a.collectiveSource) return "collective";
   const leaf = (a.gnucashAccount || "").split(":").at(-1);
   const name = normalizedName(a.name);
   const mappedName = normalizedName(leaf);

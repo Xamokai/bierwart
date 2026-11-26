@@ -1,3 +1,10 @@
+const hyphenateGerman = createHyphenator(hyphenationPatternsDe1996, {minWordLength:7});
+function wrapName(name) {
+  // Prefer a longer last syllable group on narrow tiles, even with a browser
+  // that lacks a German dictionary or ignores CSS hyphenation limits.
+  return hyphenateGerman(name).replace(/\u00ad(?=\p{L}{1,2}(?![\p{L}\u00ad]))/gu, "");
+}
+
 function displayText(value) {
   return String(value ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }

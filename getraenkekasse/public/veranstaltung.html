@@ -26,6 +26,7 @@
     <button type="submit" class="btn gold">Veranstaltung anlegen</button></form>
 </dialog>
 <div class="toast" id="toast" role="status"></div>
+<script src="/vendor/hyphen.js"></script><script src="/vendor/hyphen-de.js"></script>
 <script src="display.js"></script><script src="ui.js"></script><script src="order.js"></script><script src="bar-types.js"></script><script src="bar-card.js"></script><script src="temporary-drinks.js"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -51,7 +52,7 @@ function renderEventGroups(events) {
       link.className = "tile event-tile" + (e.permanent ? " prio" : "");
       if (e.permanent) link.setAttribute("aria-description", "Dauerhafte Veranstaltung");
       link.href = eventUrl(e);
-      const name = document.createElement("strong"); name.textContent = e.name;
+      const name = document.createElement("strong"); name.textContent = wrapName(e.name);
       const mode = document.createElement("small"); mode.textContent = e.mode === "personal" ? "Auf Personen buchen" : "Direkt buchen";
       link.append(name, mode);
       grid.append(link);
@@ -74,7 +75,7 @@ async function load() {
   if (current?.mode === "personal") { location.replace(eventUrl(current)); return; }
   $("pick").hidden = !!current; $("book").hidden = !current;
   if (current) {
-    $("evName").textContent = current.name;
+    $("evName").textContent = wrapName(current.name);
     order.setProducts(products.concat(shared, current.customDrinks || [], current.barDrinks || []));
   } else {
     renderEventGroups(events);

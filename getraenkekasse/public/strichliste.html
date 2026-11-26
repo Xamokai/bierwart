@@ -33,6 +33,7 @@
     <button class="btn gold" type="submit">Konto anlegen</button></form>
 </dialog>
 <div class="toast" id="toast" role="status"></div>
+<script src="/vendor/hyphen.js"></script><script src="/vendor/hyphen-de.js"></script>
 <script src="display.js"></script><script src="ui.js"></script><script src="order.js"></script>
 <script src="bar-types.js"></script><script src="bar-card.js"></script><script src="temporary-drinks.js"></script><script src="meal-allocation.js"></script><script src="active-meals.js"></script>
 <script>
@@ -50,7 +51,7 @@ const modal = BW.dialog($("sheet"), () => !order.busy);
 function openSheet(account) {
   current = account;
   order.clear();
-  $("sheetName").textContent = current.name;
+  $("sheetName").textContent = wrapName(current.name);
   modal.open();
 }
 function renderNames() {
@@ -73,7 +74,7 @@ function renderNames() {
     }
     const b = document.createElement("button");
     b.className = "tile" + (a.group === "priority" ? " prio" : "");
-    b.textContent = a.name; b.onclick = () => openSheet(a);
+    b.textContent = wrapName(a.name); b.onclick = () => openSheet(a);
     grid.append(b);
   }
   if (!grid) {
@@ -98,7 +99,7 @@ async function load() {
   }
   accounts = names; shared = drinks;
   $("btnBarCard").hidden = !currentEvent;
-  if (currentEvent) $("pageTitle").textContent = currentEvent.name;
+  if (currentEvent) $("pageTitle").textContent = wrapName(currentEvent.name);
   order.setProducts(products.filter(p => p.tally).slice(0, 5).concat(shared, currentEvent?.customDrinks || [], currentEvent?.barDrinks || []));
   $("btnNew").disabled = $("btnEventDrinks").disabled = false;
   renderNames();

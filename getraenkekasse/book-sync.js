@@ -7,20 +7,21 @@ const norm=s=>String(s||"").normalize("NFC").trim().replace(/\s+/g," ").toLocale
 const leaf=p=>p.split(":").at(-1);
 const codeOf=p=>leaf(p).match(/^(\d+)\s/)?.[1] || "";
 const parent=p=>p.slice(0,p.lastIndexOf(":"));
-const specialNames={"1800":"Verrechnung Philister","4620":"Arbeitseinsatz","4640":"Grillkohle / Löschbier","4730":"Gast / Mitgliederwerbung"};
+const specialNames={"1800":"SHV","4620":"Arbeitseinsatz","4640":"Grillkohle / Löschbier","4730":"Gast / Mitgliederwerbung"};
 function kindOf(a,g){
   if(a.hidden || a.placeholder) return "";
   const code=a.code||codeOf(a.path);
   if(parent(a.path)===g.memberPrefix && /^\d{5}$/.test(code)) return "person";
   if(parent(a.path)===g.eventAccount && /^4[0-5]\d\d$/.test(code)) return "event";
-  if((parent(a.path)===g.eventAccount && specialNames[code]) || (code==="1800" && /Verrechnungskonto Phil/i.test(leaf(a.path))) || a.path===g.cashAccount) return "collective";
+  if((parent(a.path)===g.eventAccount && specialNames[code]) || code==="1800" || a.path===g.cashAccount) return "collective";
   return "";
 }
 function descriptor(a,g) {
   const kind=kindOf(a,g), code=a.code || codeOf(a.path), label=leaf(a.path).replace(/^\d+\s+/,"");
   const name=kind==="collective"?(a.path===g.cashAccount?"Barzahler":specialNames[code]):label;
   const surname=name.includes(",")?name.split(",")[0].trim():name.split(/\s+/).at(-1);
-  return {kind,name,surname,code,path:a.path,guid:a.guid||""};
+  const collectiveSource = kind==="collective" ? (a.path===g.cashAccount ? "cash" : code) : undefined;
+  return {kind,name,surname,code,path:a.path,guid:a.guid||"",collectiveSource};
 }
 function personKey(name) {
   const plain=name.replace(/^\d+\s+/,"");
@@ -34,7 +35,8 @@ function planAccounts(book,db,g) {
   for(const a of input){
     const d=descriptor(a,g);
     const uniqueCode=counts.get(d.kind+":"+d.code)===1;
-    const pool=db.accounts.filter(x=>!x.isSystem && !x.fixedBookCode && Boolean(x.isEvent)===(d.kind!=="person"));
+    const pool=db.accounts.filter(x=>!x.isSystem && Boolean(x.isEvent)===(d.kind!=="person") &&
+      (x.collectiveSource ? x.collectiveSource===d.collectiveSource : !x.fixedBookCode && !x.collectiveTarget));
     const reserved=pool.find(x=>x.bookProposed && x.gnucashAccount!==d.path && parent(x.gnucashAccount)===parent(d.path) && codeOf(x.gnucashAccount)===d.code);
     if(reserved)conflicts.push("Nummer "+d.code+" auch für "+reserved.name+" vorgemerkt. Vor dem BW-Export dessen Kontenzuordnung korrigieren.");
     const samePath=pool.filter(x=>x.gnucashAccount===d.path);
@@ -46,14 +48,15 @@ function planAccounts(book,db,g) {
     // Link its canonical, as yet unmapped template before adding another event.
     const namedEvent = d.kind === "event" && samePath.length && sameName.length === 1 &&
       !samePath.some(x => personKey(x.name) === personKey(d.name)) ? sameName : null;
-    let matches=namedEvent || (samePath.length?samePath:sameIdentity.length?sameIdentity:sameName);
+    const canonical=d.collectiveSource && uniqueCode && pool.filter(x=>x.collectiveSource===d.collectiveSource);
+    let matches=canonical?.length===1 ? canonical : namedEvent || (samePath.length?samePath:sameIdentity.length?sameIdentity:sameName);
     if(d.kind!=="person" && matches.length>1){
       const exact=matches.filter(x=>norm(x.name)===norm(d.name));
       if(exact.length===1)matches=exact;
       else if(matches.every(x=>x.gnucashAccount===d.path))matches=[]; // add one canonical event in addition to register shortcuts
     }
     const match=matches[0];
-    if(matches.length>1 || (match && (match.deleted || used.has(match.id))) || (!match && db.accounts.some(x=>norm(x.name)===norm(d.name)))){
+    if(matches.length>1 || (match && ((match.deleted && !match.collectiveSource) || used.has(match.id))) || (!match && db.accounts.some(x=>norm(x.name)===norm(d.name)))){
       conflicts.push(d.path+" (Name oder Zuordnung nicht eindeutig)");continue;
     }
     const id=match?.id || digest(["book-account",d.path]).slice(0,24);
@@ -62,7 +65,7 @@ function planAccounts(book,db,g) {
     plans.push({...d,id,action});resolved.set(d.path,{...d,id});
   }
   // Explicit manual assignments may live outside the standard chart.
-  for(const a of db.accounts.filter(a=>a.gnucashAccount && !a.deleted && !a.isSystem && !a.fixedBookCode))
+  for(const a of db.accounts.filter(a=>a.gnucashAccount && !a.deleted && !a.isSystem && !a.fixedBookCode && !a.collectiveTarget))
     if(!resolved.has(a.gnucashAccount) && !input.some(x=>x.path===a.gnucashAccount))
       resolved.set(a.gnucashAccount,{kind:a.isEvent?"event":"person",id:a.id,name:a.name,path:a.gnucashAccount});
   return {plans,conflicts,resolved};

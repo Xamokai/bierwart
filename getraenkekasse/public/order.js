@@ -65,7 +65,7 @@ function mountOrder({grid, sum, tally, reset, submit, book, onBooked, onRejected
           picture.setAttribute("aria-hidden", "true");
           picture.textContent = "🍹";
         }
-        element.querySelector(".drink-name").textContent = name;
+        element.querySelector(".drink-name").textContent = wrapName(name);
         element.querySelector(".drink-price").textContent = BW.money(price);
         remove.setAttribute("aria-label", "Einen Strich für " + name + " entfernen");
         add.onclick = () => { quantities.set(name, (quantities.get(name) || 0) + 1); update(); };
