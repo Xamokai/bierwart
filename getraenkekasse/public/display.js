@@ -14,6 +14,11 @@ document.addEventListener("error", event => {
   if (event.target instanceof HTMLImageElement) event.target.style.visibility="hidden";
 }, true);
 
+function transactionAmount(tx, formatMoney) {
+  const amount = tx.type === "deposit" ? tx.total : -tx.total;
+  return `<span class="${amount >= 0 ? "amount-pos" : "amount-neg"}">${amount >= 0 ? "+" : "−"}${formatMoney(Math.abs(amount))}</span>`;
+}
+
 function semesterOf(dateStr) {
   const date = dateStr.length === 10 ? dateStr : new Intl.DateTimeFormat("sv-SE", {
     timeZone:"Europe/Berlin"

@@ -113,7 +113,7 @@ window.ActiveMeals = (() => {
 
     function addParticipant(account) {
       if (!account || state.participants.some(p => p.accountId === account.id)) return;
-      state.participants.push({ accountId: account.id, name: account.name, price: "",
+      state.participants.push({ accountId: account.id, name: account.name, price: "", portions:1,
         collective:account.collective, role:account.collective ? "kgast" : "voll" });
       personInput.value = "";
       matches.textContent = "";
@@ -170,12 +170,19 @@ window.ActiveMeals = (() => {
               <label><input type="radio" name="${uid}-role-${i}" data-role-index="${i}" value="${value}"
                 ${p.role === value ? "checked" : ""} ${p.collective ? "disabled" : ""}> ${label}</label>`).join("")}
           </div>
+          <label class="participant-portions">Portionen<input type="number" min="1" max="999" step="1" inputmode="numeric" data-portions="${i}" value="${p.portions || ""}"></label>
           <div class="participant-price"><label for="${uid}-price-${i}">Preis (€)</label><input id="${uid}-price-${i}" data-price="${i}" inputmode="decimal" value="${esc(p.price)}" placeholder="Auto"></div>
           <button class="btn small" type="button" data-remove="${i}" aria-label="${esc(p.name)} entfernen">✕</button>
         </div>`;
       }).join("");
       personRows.querySelectorAll("[data-price]").forEach(input => {
         input.oninput = () => { state.participants[Number(input.dataset.price)].price = input.value; updateStatus(false); };
+      });
+      personRows.querySelectorAll("[data-portions]").forEach(input => {
+        input.oninput = () => {
+          state.participants[Number(input.dataset.portions)].portions = Number(input.value);
+          updateStatus(false);
+        };
       });
       personRows.querySelectorAll("[data-role-index]").forEach(input => {
         input.onchange = () => {
@@ -298,7 +305,7 @@ window.ActiveMeals = (() => {
       try {
         const receipts = [];
         for (const item of state.files) receipts.push(await uploadFile(item.file));
-        const participants = state.participants.map(p => ({ accountId: p.accountId, role:p.role, price: p.price.trim() === "" ? null : p.price }));
+        const participants = state.participants.map(p => ({ accountId: p.accountId, role:p.role, portions:p.portions, price: p.price.trim() === "" ? null : p.price }));
         const payerValue = payerInput.value;
         const payerKind = payerValue.startsWith("account:") ? "account" : payerValue;
         const payerAccountId = payerKind === "account" ? payerValue.replace(/^account:/, "") : null;

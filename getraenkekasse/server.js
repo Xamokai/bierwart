@@ -421,12 +421,12 @@ function requirePin(req, res, next) {
 
 /* Erlaubt Admin-PIN ODER ein Nutzerkonto mit passender Rolle
  * Rollen: "gnucash" (XXX – Import/Export), "uebersicht" (BW – Dashboard) */
-function allow(role) {
+function allow(...roles) {
   return (req, res, next) => {
     if (req.get("X-Admin-Pin") === ADMIN_PIN) return next();
     const token = (req.get("Authorization") || "").replace(/^Bearer\s+/i, "");
     const acc = db.accounts.find(a => a.id === tokens.get(token));
-    if (acc && !acc.deleted && !acc.isEvent && !acc.isSystem && acc.roles && acc.roles[role]) { req.account = acc; return next(); }
+    if (acc && !acc.deleted && !acc.isEvent && !acc.isSystem && acc.roles && roles.some(role => acc.roles[role])) { req.account = acc; return next(); }
     res.status(401).json({ error: "Keine Berechtigung" });
   };
 }
@@ -799,7 +799,7 @@ app.post("/api/active-meals", optionalUser, (req, res) => {
   const date = String(req.body.date || "").trim();
   const totalCents = parseMoneyCents(req.body.total);
   const rawParticipants = Array.isArray(req.body.participants) ? req.body.participants : [];
-  const roleAllocation = req.body.allocation === "roles" || rawParticipants.some(p => p?.role !== undefined);
+  const roleAllocation = req.body.allocation === "roles" || rawParticipants.some(p => p?.role !== undefined || p?.portions !== undefined);
   let subsidyCents = roleAllocation ? 0 : parseMoneyCents(req.body.subsidy || "0");
   let guestCents = roleAllocation ? 0 : parseMoneyCents(req.body.guestShare || "0");
   if (!name) return res.status(400).json({ error: "Name des Aktivenessens fehlt" });
@@ -836,7 +836,7 @@ app.post("/api/active-meals", optionalUser, (req, res) => {
     const manual = raw.price !== null && raw.price !== undefined && String(raw.price).trim() !== "";
     const cents = manual ? parseMoneyCents(raw.price) : null;
     if (manual && (!Number.isInteger(cents) || cents < 0)) return res.status(400).json({ error: `Ungültiger Betrag für ${acc.name}` });
-    participants.push({ accountId: acc.id, name: acc.name, manual, cents, collective, role });
+    participants.push({ accountId: acc.id, name: acc.name, manual, cents, collective, role, portions:raw.portions });
   }
   if (roleAllocation) {
     try {
@@ -881,7 +881,7 @@ app.post("/api/active-meals", optionalUser, (req, res) => {
     id: mealId, identifier, name, date, total: totalCents / 100, subsidy:subsidyCents/100,guestShare:guestCents/100,
     ...(roleAllocation ? {subsidyPerPerson:mealSubsidyCents()/100} : {}),
     participants: participants.map(p => ({accountId:p.accountId, name:p.name, price:p.cents/100, manual:p.manual,
-      ...(roleAllocation ? {role:p.role, collective:p.collective, grant:p.grant/100} : {})})),
+      ...(roleAllocation ? {role:p.role, portions:p.portions, collective:p.collective, grant:p.grant/100} : {})})),
     receipts, createdAt: new Date().toISOString(),
     createdByAccountId: req.account ? req.account.id : null,
     source: req.account ? "account" : "tally",
@@ -1164,6 +1164,7 @@ app.get("/api/admin/backup-tally.ods", allow("uebersicht"), (req, res) => {
 });
 /* Sichtbar auf der Veranstaltungsseite: permanente immer,
  * temporäre nur 7 Tage nach Anlage. Admin/BW/XXX sehen alle weiterhin. */
+require("./stock-counts").mountStockCounts(app,{getDB:()=>db, allow, newId, saveDB, addAudit, loadProducts, validDateOnly, eventMode, eventLabel, parseMoneyCents});
 mountBar(app,{getDB:()=>db, allow, optionalUser, saveDB, newId, parsePrice, loadProducts, addAudit});
 app.get("/api/events", (req, res) => {
   res.json(db.accounts.filter(visibleEvent)
@@ -1300,11 +1301,14 @@ app.post("/api/admin/login", (req, res) => {
 function eventTotals() {
   const totals = new Map();
   for (const tx of db.transactions) {
-    if (tx.type !== "purchase" || tx.balanceSync || tx.activeMealId) continue;
+    if (tx.balanceSync || tx.activeMealId) continue;
+    const cashCount = tx.type === "deposit" && tx.stockCountId;
+    if (tx.type !== "purchase" && !cashCount) continue;
+    const amount = cashCount ? -cents(tx.total) : cents(tx.total);
     const id = tx.eventId || tx.accountId;
     const total = totals.get(id) || {all:0, pending:0};
-    total.all += cents(tx.total);
-    if (!tx.exported && !tx.eventSettled) total.pending += cents(tx.total);
+    total.all += amount;
+    if (!tx.exported && !tx.eventSettled) total.pending += amount;
     totals.set(id, total);
   }
   return totals;
@@ -1373,6 +1377,7 @@ app.post("/api/admin/flags", requirePin, (req, res) => {
   if (typeof req.body.priority === "boolean") acc.priority = req.body.priority;
   acc.roles = acc.roles || {};
   if (typeof req.body.gnucash === "boolean") acc.roles.gnucash = req.body.gnucash;
+  if (typeof req.body.kneipwart === "boolean") acc.roles.kneipwart = req.body.kneipwart;
   if (typeof req.body.schnapswart === "boolean") acc.roles.schnapswart = req.body.schnapswart;
   if (typeof req.body.uebersicht === "boolean") acc.roles.uebersicht = req.body.uebersicht;
   addAudit(req, "account.flags_changed", `Rechte oder Priorität für „${acc.name}“ geändert`,
@@ -1547,7 +1552,7 @@ function groupsFor(sel, number, summaryDate) {
         throw Error("Für „" + eventName + "“ ein eigenes GnuCash-Gegenkonto zuordnen oder zuerst den Kontenbaum abgleichen.");
       income = event.gnucashAccount;
     }
-    if (summaryDate && !deposit) {
+    if (summaryDate && !deposit && !t.stockCountId) {
       // Keep each event's revenue separate from other events and regular BW purchases.
       const key = eventName ? t.eventId : null;
       if (!consumption.has(key))
@@ -1952,8 +1957,10 @@ function commitRun(req,res) {
   const closed = db.transactions.filter(t=>eventIds.has(t.accountId) && inRun.has(t.id));
   for (const t of closed) t.eventSettled = true;
   const pendingEvents = new Set(db.transactions.filter(t=>!t.eventSettled).map(t=>t.accountId));
+  // Zählpaare müssen auch nach einem Export für Nachträge erreichbar bleiben.
+  const countedEvents = new Set((db.stockCounts || []).map(count => count.eventId));
   for (const a of db.accounts)
-    if (a.isEvent && !a.permanent && involvedEvents.has(a.id) && !pendingEvents.has(a.id)) a.deleted = true;
+    if (a.isEvent && !a.permanent && involvedEvents.has(a.id) && !pendingEvents.has(a.id) && !countedEvents.has(a.id)) a.deleted = true;
 
   run.status = "committed";
   run.committedAt = now;

@@ -1,4 +1,4 @@
-# Bierwart · Getränkekasse 1.11.5
+# Bierwart · Getränkekasse 1.12.0
 
 Die Strichliste läuft auf **einem Rechner im Hausnetz**. Mitglieder, Bierwarte und Kassenwart öffnen sie im Browser. GnuCash kann auf einem anderen Rechner laufen. Der Austausch über die CSV-Assistenten und den Bereich **GnuCash Import / Export** ist ebenfalls verfügbar.
 

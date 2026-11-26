@@ -98,7 +98,7 @@ window.ActiveMealManagement = (() => {
       list.innerHTML = renderMealsBySemester(state.meals, meal => {
         const participants = (meal.participants || []).map(p => `
           <div class="list-item">
-            <span>${esc(p.name)}${p.role ? " · " + esc(activeMealRoleLabel(p.role)) : ""}</span>
+            <span>${esc(p.name)}${p.portions ? " · " + p.portions + (p.portions === 1 ? " Portion" : " Portionen") : ""}${p.role ? " · " + esc(activeMealRoleLabel(p.role)) : ""}</span>
             <strong>${eur(p.price)}</strong>
           </div>`).join("");
         const receipts = (meal.receipts || []).map((url, index) => `

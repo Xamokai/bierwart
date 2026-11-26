@@ -35,7 +35,8 @@
     <button type="button" class="btn" aria-controls="shop">Getränke kaufen</button>
     <button type="button" class="btn" aria-controls="emailPanel passwordPanel">Kontoeinstellungen</button>
     <button type="button" class="btn" aria-controls="secDash">Kontenübersicht (BW)</button>
-    <button type="button" class="btn" aria-controls="secBar">Schnapswart</button>
+    <button type="button" class="btn" aria-controls="secBar">Getränkekarten (SW)</button>
+    <button type="button" class="btn" aria-controls="secStock">Auszählungen</button>
     <button type="button" class="btn" aria-controls="secProd">Produkte &amp; Preise (BW)</button>
     <button type="button" class="btn" aria-controls="debtMails">Zahlungserinnerungen (XXX)</button>
     <button type="button" class="btn" aria-controls="secGnu">GnuCash Import / Export (XXX)</button>
@@ -110,8 +111,11 @@
     </details>
 
     <details class="daygroup" id="secBar" hidden>
-      <summary><strong>Schnapswart</strong><span class="muted">▾</span></summary>
+      <summary><strong>Getränkekarten (SW)</strong><span class="muted">▾</span></summary>
       <div class="body" id="barManager"></div>
+    </details>
+    <details class="daygroup" id="secStock" hidden>
+      <summary><strong>Auszählungen</strong></summary><div class="body" id="stockCounts"></div>
     </details>
     <!-- Nur sichtbar mit Rolle BW: Produkte & Preise -->
     <details class="daygroup" id="secProd" style="display:none">
@@ -187,7 +191,7 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script src="device.js"></script>
-<script src="account-navigation.js"></script>
+<script src="account-navigation.js"></script><script src="stock-counts.js"></script>
 <script src="/vendor/hyphen.js"></script><script src="/vendor/hyphen-de.js"></script>
 <script src="display.js"></script>
 <script src="ui.js"></script>
@@ -209,6 +213,9 @@ let token = localStorage.getItem("kasse_token") || "";
 const authH = () => ({ "Authorization": "Bearer " + token, "Content-Type": "application/json" });
 
 const accountNavigation = mountAccountNavigation();
+const stockPanel = document.getElementById("secStock");
+const stockCounts = mountStockCounts(document.getElementById("stockCounts"),authH);
+stockPanel.ontoggle = () => { if (stockPanel.open && !stockPanel.hidden) stockCounts.refresh(); };
 const mailPanel = document.getElementById("debtMails");
 const barPanel = document.getElementById("secBar");
 const barManager = mountBarManager(document.getElementById("barManager"),authH);
@@ -257,6 +264,7 @@ let accountNames = [];
 async function showLogin() {
   me = null; order.clear();
   accountNavigation.reset();
+  stockPanel.open = false; stockPanel.hidden = true; stockCounts.reset();
   barPanel.hidden = true; barPanel.open = false; barManager.reset();
   mailPanel.hidden = true; mailPanel.open = false; debtMails.clear();
   document.getElementById("emailPanel").open = false; emailForm.reset();
@@ -358,7 +366,7 @@ async function loadMe() {
 
 function renderMealDetails(meal) {
   const people = meal.participants.map(person => `
-    <div class="list-item"><span>${displayText(person.name)}${person.role ? " · " + displayText(activeMealRoleLabel(person.role)) : ""}</span><strong>${eur(person.price)}</strong></div>`).join("");
+    <div class="list-item"><span>${displayText(person.name)}${person.portions ? " · " + person.portions + (person.portions === 1 ? " Portion" : " Portionen") : ""}${person.role ? " · " + displayText(activeMealRoleLabel(person.role)) : ""}</span><strong>${eur(person.price)}</strong></div>`).join("");
   const payouts = meal.payouts?.length
     ? meal.payouts.map(payer => payer.name + " (" + eur(payer.amount) + ")").join(", ")
     : meal.payer?.name || "XXX-Karte";
@@ -463,6 +471,8 @@ let roleAccounts = [], roleTx = [];
 
 function applyRoles() {
   const roles = (me && me.roles) || {};
+  stockPanel.hidden = !(roles.schnapswart || roles.kneipwart || roles.uebersicht || roles.gnucash);
+  if (stockPanel.hidden) { stockPanel.open = false; stockCounts.reset(); }
   barPanel.hidden = !roles.schnapswart;
   if (barPanel.hidden && barPanel.open) { barPanel.open = false; barManager.reset(); }
   mailPanel.hidden = !roles.gnucash;
@@ -644,7 +654,7 @@ function renderRoleDash() {
               <span class="${sum >= 0 ? "amount-pos" : "amount-neg"}">${sum >= 0 ? "+" : "−"}${eur(Math.abs(sum))}</span></div>
             ${list.map(t => `<div class="list-item" style="padding-left:14px">
               <span>${displayText(t.description)} <span class="muted" style="font-size:.8rem">${t.date.slice(11, 16)} Uhr</span></span>
-              <span class="${t.type === "deposit" ? "amount-pos" : "amount-neg"}">${t.type === "deposit" ? "+" : "−"}${eur(t.total)}</span>
+              ${transactionAmount(t,eur)}
             </div>`).join("")}`);
         });
       });

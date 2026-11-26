@@ -28,7 +28,7 @@ async function startTestServer(t, db) {
   // Installed releases serve these browser assets from inside .bierwart/versions.
   for (const file of ["hyphen/hyphen.js","hyphen/patterns/de-1996.js"])
     fs.cpSync(require.resolve(file), path.join(tmp, "node_modules", file));
-  for (const item of ["server.js","bar-catalog.js","bar-pdf.js","pdf-text.js","debt-mail.js","meal-pdf.js","forms","fonts","event-mode.js","book-format.js","book-sync.js","book-exchange.js","lan.js","gnucash-sync.js","config.json","public","assets"]) fs.cpSync(path.join(root,item),path.join(tmp,item),{recursive:true});
+  for (const item of ["server.js","stock-counts.js","stock-drinks.json","bar-catalog.js","bar-pdf.js","pdf-text.js","debt-mail.js","meal-pdf.js","forms","fonts","event-mode.js","book-format.js","book-sync.js","book-exchange.js","lan.js","gnucash-sync.js","config.json","public","assets"]) fs.cpSync(path.join(root,item),path.join(tmp,item),{recursive:true});
   fs.mkdirSync(path.join(tmp,"data"));
   if (db) fs.writeFileSync(path.join(tmp, "data/db.json"), JSON.stringify(db));
   const server = spawn(process.execPath,["server.js"],{cwd:tmp,env:{...process.env,BW_PORT:"0",BW_HOST:"127.0.0.1",BW_ADMIN_PIN:"778899",NODE_PATH:path.join(root,"node_modules")},stdio:["ignore","pipe","inherit"]});
@@ -355,11 +355,12 @@ test("Konto, Buchungslauf und GnuCash-Rückimport", async t => {
   assert.equal(mealOptions.subsidyPerPerson,4);
   await call("/api/admin/flags",{accountId:a.id,gnucash:true});
   const {meal: mixed}=await call("/api/active-meals",{name:"Äpfel und Käse",date:today,total:"30,01",allocation:"roles",
-    participants:[{accountId:a.id,role:"voll"},{accountId:used.id,role:"aktiv"},{accountId:guest.id,role:"voll"}],
+    participants:[{accountId:a.id,role:"voll"},{accountId:used.id,role:"aktiv",portions:2},{accountId:guest.id,role:"voll"}],
     payerKind:"account",payerAccountId:a.id,receipts:[receipt.file]});
   assert.equal(mixed.subsidy,8);
-  assert.equal(mixed.guestShare,6);
-  assert.deepEqual(mixed.participants.map(person=>[person.role,person.price]),[["voll",10.01],["aktiv",6],["kgast",6]]);
+  assert.equal(mixed.guestShare,3.5);
+  assert.deepEqual(mixed.participants.map(p => p.portions),[1,2,1]);
+  assert.deepEqual(mixed.participants.map(person=>[person.role,person.price]),[["voll",7.51],["aktiv",11],["kgast",3.5]]);
   assert.equal(mixed.subsidyPerPerson,4);
   await call("/api/admin/active-meals/settings",{subsidyPerPerson:"4,50"},auth,"PUT");
   assert.equal((await call("/api/active-meals/options")).subsidyPerPerson,4.5);
@@ -379,7 +380,7 @@ test("Konto, Buchungslauf und GnuCash-Rückimport", async t => {
   const exportedMeal=await call(meals+mixed.id+"/export");
   const exportedSplits=readBook(Buffer.from(exportedMeal)).transactions[0].splits;
   assert.equal(exportedSplits.filter(split=>split.path===settings.guestAccount).length,1);
-  assert.equal(splitCents(exportedSplits.find(split=>split.path===settings.guestAccount)),600);
+  assert.equal(splitCents(exportedSplits.find(split=>split.path===settings.guestAccount)),350);
   assert.equal(splitCents(exportedSplits.find(split=>split.path===settings.mealAccount)),800);
   await t.test("Dauerhafter Rezeptkatalog, Rechte, Druck und Veranstaltungsbuchung", async () => {
     const path = "/api/bar/recipes", recipes = await call(path);
@@ -479,4 +480,133 @@ test("Aktivenessen auf dem Originalformular mit genau 18 Zeilen und Fortsetzung"
   for (const page of semester.getPages()) {
     assert(Math.abs(page.getWidth() - 595.3) < 0.1 && Math.abs(page.getHeight() - 841.9) < 0.1);
   }
+});
+
+test("SW, KW, BW und XXX zählen ihre Bestände mit zeitgebundenen Preisen", async t => {
+  const {call} = await startTestServer(t);
+  const api = "/api/stock-counts";
+  const auth = {};
+  for (const role of ["schnapswart","kneipwart","uebersicht","gnucash","ohne"]) {
+    const name = "Test " + role;
+    const a = await call("/api/accounts",{name,surname:role});
+    if (role !== "ohne") await call("/api/admin/flags",{accountId:a.id,[role]:true});
+    const login = await call("/api/login",{name,password:role});
+    auth[role] = {Authorization:"Bearer "+login.token};
+  }
+  await call(api+"/options",undefined,auth.ohne,"GET",401);
+  const areas = {schnapswart:"spirits",kneipwart:"spirits",uebersicht:"drinks",gnucash:"cash"};
+  for (const [role,area] of Object.entries(areas)) {
+    const options = await call(api+"/options",undefined,auth[role]);
+    assert.deepEqual(Object.keys(options.catalogs),[area]);
+    assert.equal(options.canReview,role === "gnucash");
+    if (area !== "cash") await call(api,undefined,auth[role],"GET",401);
+  }
+  const options = await call(api+"/options");
+  assert(options.catalogs.spirits.some(p => p.name==="Berliner Luft · 0,7 l" && p.priceCents === 641));
+  const drink = {name:"Hauslikör",price:"10,01"};
+  await call(api+"/drinks",drink,auth.uebersicht,"POST",401);
+  await call(api+"/drinks",drink,auth.kneipwart,"POST",201);
+  await call(api+"/drinks",drink,auth.schnapswart,"POST",409);
+  const count = {area:"spirits",name:"Eröffnung",scope:"event",phase:"before",eventId:options.events[0].id,date:"2026-11-26",
+    requestId:"a".repeat(32),items:[{name:drink.name,priceCents:1001,quantity:"1,5"}]};
+  await call(api,count,auth.uebersicht,"POST",403);
+  await call(api,{...count,eventId:"unbekannt"},auth.schnapswart,"POST",400);
+  await call(api,{...count,items:[{...count.items[0],priceCents:888}]},auth.schnapswart,"POST",409);
+  const result = await call(api,count,auth.schnapswart,"POST",201);
+  assert.equal(result.totalCents,1502);
+  assert.equal((await call(api,count,auth.schnapswart)).id,result.id);
+  await call(api,{...count,name:"Geänderte Zählung"},auth.schnapswart,"POST",409);
+  const stock = {...count,area:"drinks",scope:"stock",requestId:"b".repeat(32),items:[{name:"Bier",priceCents:150,quantity:5}]};
+  assert.equal((await call(api,stock,auth.uebersicht,"POST",201)).totalCents,750);
+  const cash = {...stock,area:"cash",requestId:"c".repeat(32),items:[{name:"20 €",priceCents:2000,quantity:2}]};
+  await call(api,{...cash,items:[{...cash.items[0],quantity:0.5}]},auth.gnucash,"POST",400);
+  assert.equal((await call(api,cash,auth.gnucash,"POST",201)).totalCents,4000);
+  const history = await call(api,undefined,auth.gnucash);
+  assert.equal(history.length,3);
+  assert.equal(history.find(r=>r.id===result.id).eventName,options.events[0].name);
+  assert.equal(history.find(r=>r.id===result.id).countedBy,"Test schnapswart");
+});
+
+test("Veranstaltungszählungen buchen Verbrauch, Bareinnahmen und spätere Korrekturen genau einmal", async t => {
+  const target = "Veranstaltungen:Testkneipe", eventId = "testkneipe";
+  const {call,admin} = await startTestServer(t,{accounts:[{id:eventId,name:"Testkneipe",isEvent:true,gnucashAccount:target}],transactions:[],settings:{}});
+  const api = "/api/stock-counts", runs = "/api/admin/export-runs";
+  const requestId = () => require("node:crypto").randomBytes(16).toString("hex");
+  const count = (phase,items,fields={}) => ({area:"drinks",scope:"event",name:"Testkneipe",eventId,date:"2026-08-31",phase,items,requestId:requestId(),...fields});
+  const beer = (quantity,restocked=0) => ({name:"Bier",priceCents:150,quantity,restocked});
+  const euro = quantity => ({name:"1 €",priceCents:100,quantity});
+  const create = body => call(api,body,admin,"POST",201);
+  const read = async id => (await call(api)).find(r=>r.id===id);
+  const member = await call("/api/accounts",{name:"Test KW",surname:"KW"});
+  await call("/api/admin/flags",{accountId:member.id,kneipwart:true});
+  const kw = {Authorization:"Bearer "+(await call("/api/login",{name:"Test KW",password:"KW"})).token};
+  const start = count("before",[beer(10)]);
+  const opening = await create(start);
+  await call(api,count("after",[beer(5)]),admin,"POST",400);
+  await call(api,count("after",[euro(1)],{area:"cash",beforeId:opening.id}),admin,"POST",400);
+  await call(api,count("after",[beer(5)],{date:"2026-08-30",beforeId:opening.id}),admin,"POST",400);
+  // A second session in the same event must not replace this opening.
+  await create(count("before",[beer(50)]));
+  const end = count("after",[beer(4)],{date:"2026-09-01",beforeId:opening.id});
+  const closing = await create(end);
+  await call(api,{...end,requestId:requestId()},admin,"POST",409);
+  const getDiff = async id => (await read(id)).comparison;
+  const initial = await getDiff(closing.id);
+  assert.equal(initial.pendingCents,900);
+  const book = api+"/"+closing.id+"/book";
+  assert.deepEqual(await call(api+"/events",undefined,kw),[]);
+  await call(book,initial,kw,"POST",403);
+  await call(api+"/"+opening.id,{...start,version:1},kw,"PUT",403);
+  const [b1,b2] = await Promise.all([call(book,initial),call(book,initial)]);
+  assert.deepEqual([b1.amountCents,b2.amountCents].sort((a,b)=>a-b),[0,900]);
+  const cashStart = await create(count("before",[euro(2)],{area:"cash"}));
+  const cashEnd = await create(count("after",[euro(5)],{area:"cash",beforeId:cashStart.id}));
+  const cashDiff = await getDiff(cashEnd.id);
+  assert.equal(cashDiff.pendingCents,300);
+  await call(api+"/"+cashEnd.id+"/book",cashDiff);
+  const event = async () => (await call("/api/admin/accounts")).find(a=>a.id===eventId);
+  assert.equal((await event()).eventPending,6);
+  assert.equal((await event()).balance,-6);
+  const run = await call(runs,{});
+  const exportSplits = async run => readBook(Buffer.from(await call(runs+"/"+run.id+"/csv")))
+    .transactions.flatMap(tx=>tx.splits).filter(s=>s.path===target).map(splitCents).sort((a,b)=>a-b);
+  assert.deepEqual(await exportSplits(run),[-300,900]);
+  await call(runs+"/"+run.id+"/commit",{});
+  assert.equal((await event()).eventPending,0);
+  const products = await call("/api/products");
+  await call("/api/admin/products",{products:products.map(p=>p.name==="Bier"?{...p,price:2}:p)},admin,"PUT");
+  const edit = {...start,items:[beer(10,2)],requestId:requestId(),version:1};
+  const beforePath = api+"/"+opening.id;
+  await call(beforePath,edit,admin,"PUT");
+  await call(beforePath,edit,admin,"PUT"); // retry after losing the response
+  await call(beforePath,{...edit,requestId:requestId()},admin,"PUT",409);
+  await call(book,initial,admin,"POST",409);
+  const amended = await getDiff(closing.id);
+  assert.deepEqual([amended.differenceCents,amended.bookedCents,amended.pendingCents],[1200,900,300]);
+  await call(book,{...amended,pendingCents:250},admin,"POST",409);
+  await call(book,amended);
+  await call(api+"/"+closing.id,{...end,items:[beer(6.5)],requestId:requestId(),version:1},admin,"PUT");
+  const correction = await getDiff(closing.id);
+  assert.equal(correction.pendingCents,-375);
+  await call(book,correction);
+  const last = await getDiff(closing.id);
+  assert.deepEqual([last.differenceCents,last.bookedCents,last.pendingCents],[825,825,0]);
+  assert.equal((await event()).eventPending,-0.75);
+  assert.equal((await event()).eventTurnover,5.25);
+  assert.deepEqual(await exportSplits(await call(runs,{summaryDate:new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Berlin"}).format(new Date())})),[-375,300]);
+});
+
+test("Auszählungsarchiv gruppiert nach Semester und Veranstaltung und hält Zählpaare zusammen", () => {
+  const vm = require("node:vm");
+  const row = (id,date,eventId,eventName,beforeId) => ({id,date,eventId,eventName,beforeId,createdAt:date});
+  const rows = [row("nach","2026-09-01","a","Kneipe","vor"),row("lager","2026-09-06"),
+    row("sommer","2026-07-12","b","Zweite Feier"),row("vor","2026-08-31","a","Kneipe"),
+    row("neu","2026-09-07","a","Kneipe"),row("feb","2026-02-28","b","Zweite Feier")];
+  const script = ["display.js","stock-counts.js"].map(f=>fs.readFileSync(path.join(root,"public",f),"utf8")).join("\n");
+  const groups = vm.runInNewContext(script+"\nJSON.stringify(groupStockCounts(rows,rows).map(s => [s.semester,s.events.map(e => [e.name,e.entries.map(r => r.id)])]))",{document:{addEventListener() {}},rows});
+  assert.deepEqual(JSON.parse(groups),[
+    ["Wintersemester 2026/27",[["Kneipe",["neu"]],["Lagerzählungen",["lager"]]]],
+    ["Sommersemester 2026",[["Kneipe",["vor","nach"]],["Zweite Feier",["sommer"]]]],
+    ["Wintersemester 2025/26",[["Zweite Feier",["feb"]]]]
+  ]);
 });

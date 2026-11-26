@@ -317,10 +317,10 @@ header.app h1 { letter-spacing: .09em; text-wrap: balance; }
 .tally .muted { font-size: .85rem; }
 .btn:disabled { transform: none; }
 .bw-dialog {
-  --pad: clamp(14px, 2.5vw, 24px);
+  --pad: 18px;
   background: var(--bg); color: var(--text); padding: 0 var(--pad) var(--pad);
   border: 1px solid var(--line); border-top: 4px solid var(--gold);
-  border-radius: 16px; width: min(960px, calc(100% - 36px)); margin: auto;
+  border-radius: 16px; width: calc(100% - 36px); max-width: 960px; margin: auto;
   max-height: 90vh; max-height: 90dvh; overflow: auto; overscroll-behavior: contain;
   box-shadow: 0 18px 80px rgba(20,18,13,.22);
 }
@@ -341,7 +341,7 @@ header.app h1 { letter-spacing: .09em; text-wrap: balance; }
 .drink-line strong, .drink-line small { display: block; }
 .drink-line strong { color: var(--text); }
 .stack-form { display: grid; gap: 14px; margin-top: 14px; }
-.drink-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(134px, 100%), 1fr)); gap: 12px; }
+.drink-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(134px, 1fr)); gap: 12px; }
 .drink-tile { position: relative; min-width: 0; }
 .drink-add {
   padding: 0 0 12px; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: stretch;
@@ -349,9 +349,9 @@ header.app h1 { letter-spacing: .09em; text-wrap: balance; }
   color: var(--text); text-align: left; cursor: pointer; box-shadow: var(--shadow);
 }
 .drink-add:active { border-color: var(--gold-dark); }
-.drink-picture { width: 100%; height: clamp(65px, 11vw, 108px); display: flex; align-items: center; justify-content: center; overflow: hidden;
+.drink-picture { width: 100%; height: 90px; height: clamp(65px, 11vw, 108px); flex: none; display: flex; align-items: center; justify-content: center; overflow: hidden;
   border-radius: var(--radius) var(--radius) 0 0; background: #f0ebdf; font-size: 2rem; }
-.drink-picture img { width: 100%; height: 100%; object-fit: cover; }
+.drink-picture img { display: block; min-width: 0; max-width: 100%; width: 100%; height: 100%; object-fit: cover; }
 .drink-name { padding: 10px 10px 2px; font-weight: 650; font-size: 1rem; }
 .drink-price { padding: 0 10px; font-size: .9rem; color: var(--gold-dark); font-variant-numeric: tabular-nums; }
 .drink-tile .count { position: absolute; top: 6px; right: 6px; min-width: 30px; min-height: 30px; border-radius: 20px;
@@ -360,7 +360,7 @@ header.app h1 { letter-spacing: .09em; text-wrap: balance; }
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); cursor: pointer; }
 .drink-minus:disabled { visibility: hidden; }
 .order-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; position: sticky;
-  bottom: max(6px, env(safe-area-inset-bottom)); z-index: 1; background: var(--black); color: white;
+  bottom: 6px; bottom: max(6px, env(safe-area-inset-bottom)); z-index: 1; background: var(--black); color: white;
   padding: 10px 14px; border-radius: var(--radius); margin-top: 18px; }
 .order-bar strong { color: var(--gold); font-size: 1.12rem; white-space: nowrap; }
 .order-actions { display: flex; gap: 8px; }
@@ -443,7 +443,7 @@ header.app h1 { letter-spacing: .09em; text-wrap: balance; }
   .account-page .daygroup .body { padding-inline: 10px; }
   .account-page #history .semgroup > summary { align-items: flex-start; flex-wrap: wrap; }
   .account-page #history .semgroup > summary > span { text-align: left; }
-  .drink-grid { gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(115px, 100%), 1fr)); }
+  .drink-grid { gap: 8px; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); }
   .order-bar { padding: 8px; }
   .order-actions .btn { padding-inline: 9px; font-size: .92rem; }
   .prodrow { display: grid; grid-template-columns: 46px minmax(0,1fr); }
@@ -490,3 +490,33 @@ header.app h1 { letter-spacing: .09em; text-wrap: balance; }
 .bar-ingredients legend { font-weight: 600; }
 .bar-manager [role=status]:empty, .stack-form [data-error]:empty { margin: 0; }
 @media (max-width: 420px) { .bar-fields { grid-template-columns: 1fr; } }
+
+.participant-portions { width: 80px; flex: 0 0 80px; margin: 0; }
+.participant-portions input { min-height: 42px; padding: 8px; }
+.stock-form h2, [data-archive] h2 { margin-top: 0; }
+.stock-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: end; gap: 12px 18px; }
+.stock-fields label, .stock-line label { margin: 0; }
+.stock-fields input, .stock-fields select, .stock-line input { margin-top: 4px; }
+.stock-options { display: grid; grid-template-columns: repeat(auto-fill,minmax(205px,1fr)); gap: 1px; max-height: 210px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--line); }
+.stock-options button { min-height: 48px; padding: 8px 12px; text-align: left; color: var(--text); background: var(--surface); cursor: pointer; font: inherit; border: 0; }
+.stock-options button:hover, .stock-options button:focus { background: #f6f1df; }
+.stock-options button:disabled { color: var(--muted); }
+.stock-options small, .stock-line small { display: block; font-size: .85rem; color: var(--muted); }
+.stock-lines { margin-block: 12px; }
+.stock-line, .stock-total { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.stock-line > div:first-child { flex: 1; }
+.stock-line label { width: 94px; }
+.stock-total { justify-content: space-between; flex-wrap: wrap; border-bottom: 0; }
+.stock-total strong { font-variant-numeric: tabular-nums; }
+.stock-table { overflow-x: auto; margin-bottom: 12px; }
+.stock-table :is(th, td):not(:first-child) { text-align: right; }
+.stock-table tfoot { font-weight: 700; }
+@media (max-width: 900px) {
+  .participant-row .grow { grid-column: 1 / -1; }
+}
+@media (max-width: 620px) {
+  .stock-fields { grid-template-columns: 1fr; }
+  .stock-line { flex-wrap: wrap; }
+  .stock-line > div:first-child { flex-basis: 100%; }
+  .stock-options { grid-template-columns: 1fr; max-height: 178px; }
+}

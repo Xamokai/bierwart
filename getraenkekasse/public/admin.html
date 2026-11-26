@@ -25,7 +25,7 @@
       <button class="btn gold" id="btnLogin">Anmelden</button>
     </div>
     <div class="muted" role="status" id="loginMsg" style="margin-top:8px"></div>
-    <p class="muted" style="margin-bottom:0">XXX- und BW-Berechtigte finden ihre Bereiche auf der Seite „Mein Konto“.</p>
+    <p class="muted" style="margin-bottom:0">Berechtigte Mitglieder finden ihre Bereiche auf der Seite „Mein Konto“.</p>
   </section>
 
   <section id="panel" style="display:none">
@@ -34,12 +34,14 @@
       <button class="btn" data-tab="accounts">Konten</button>
       <button class="btn" data-tab="events">Veranstaltungen</button>
       <button class="btn" data-tab="products">Produkte &amp; Preise</button>
-      <button class="btn" data-tab="bar">Schnapswart</button>
+      <button class="btn" data-tab="bar">Getränkekarten (SW)</button>
+      <button class="btn" data-tab="stock">Auszählungen</button>
       <button class="btn" data-tab="audit">Änderungsprotokoll</button>
       <button class="btn" data-tab="gnucash">GnuCash Import / Export</button>
       <button class="btn" data-tab="updates">Software-Updates</button>
     </nav>
 
+    <div id="tab-stock" style="display:none"></div>
     <!-- Übersicht: Käufe je Konto, gruppiert nach Datum -->
     <div id="tab-dash">
       <div class="row" style="margin-bottom:12px">
@@ -71,11 +73,11 @@
       <div class="card">
         <div style="overflow-x:auto">
           <table>
-            <thead><tr><th scope="col" aria-sort="ascending">Kontonummer</th><th>Name</th><th class="right">Guthaben</th><th>Passwort</th><th title="In der Gruppe „Priorisierte Konten“ anzeigen">Priorität ★</th><th title="Zugriff auf GnuCash Import/Export">XXX</th><th title="Sieht die Übersicht">BW</th><th>Schnapswart</th><th></th></tr></thead>
+            <thead><tr><th scope="col" aria-sort="ascending">Kontonummer</th><th>Name</th><th class="right">Guthaben</th><th>Passwort</th><th title="In der Gruppe „Priorisierte Konten“ anzeigen">Priorität ★</th><th title="Zugriff auf GnuCash Import/Export">XXX</th><th title="Sieht die Übersicht">BW</th><th title="Schnapswart">SW</th><th title="Kneipwart">KW</th><th></th></tr></thead>
             <tbody id="accTable"></tbody>
           </table>
         </div>
-        <p class="muted" style="margin-bottom:0"><strong>Priorität ★</strong> = erscheint auf der Strichliste direkt nach den Sammelkonten · <strong>XXX</strong> = darf GnuCash Import/Export nutzen · <strong>BW</strong> = darf die Übersicht sehen · <strong>Schnapswart</strong> = verwaltet Rezepte und Getränkekarten. Häkchen setzen vergibt das Recht, Häkchen entfernen entzieht es sofort.</p>
+        <p class="muted" style="margin-bottom:0"><strong>Priorität ★</strong> = erscheint auf der Strichliste direkt nach den Sammelkonten · <strong>XXX</strong> = darf GnuCash Import/Export nutzen · <strong>BW</strong> = darf die Übersicht sehen · <strong>SW</strong> = Schnapswart · <strong>KW</strong> = Kneipwart. Häkchen setzen vergibt das Recht, Häkchen entfernen entzieht es sofort.</p>
       </div>
     </div>
 
@@ -211,6 +213,7 @@
 <script src="accounting-actions.js"></script>
 <script src="active-meal-management.js"></script>
 <script src="audit-log.js"></script>
+<script src="stock-counts.js"></script>
 <script src="software-updates.js"></script>
 <script src="gnucash-workbench.js"></script>
 <script>
@@ -220,6 +223,7 @@ const H = () => ({ "X-Admin-Pin": pin, "Content-Type": "application/json" });
 
 const barManager = mountBarManager(document.getElementById("tab-bar"),H);
 const updates = mountSoftwareUpdates(H);
+const stockCounts = mountStockCounts(document.getElementById("tab-stock"),H);
 
 /* Login */
 async function tryLogin(p) {
@@ -249,6 +253,7 @@ if (pin) tryLogin(pin);
 document.querySelectorAll(".tabs [data-tab]").forEach(b => b.onclick = () => {
   document.querySelectorAll(".tabs [data-tab]").forEach(x => x.removeAttribute("aria-current"));
   b.setAttribute("aria-current", "page");
+  if (b.dataset.tab === "stock") stockCounts.refresh();
   if (b.dataset.tab === "bar") barManager.refresh();
   document.querySelectorAll("#panel > [id^='tab-']").forEach(panel =>
     panel.style.display = panel.id === "tab-" + b.dataset.tab ? "" : "none");
@@ -314,7 +319,7 @@ function renderDash() {
             <span class="${sum >= 0 ? "amount-pos" : "amount-neg"}">${sum >= 0 ? "+" : "−"}${eur(Math.abs(sum))}</span></div>
           ${list.map(t => `<div class="list-item" style="padding-left:18px">
             <span>${displayText(t.description)} <span class="muted">${t.date.slice(11, 16)} Uhr${t.exported ? " · exportiert" : ""}</span></span>
-            <span class="${t.type === "deposit" ? "amount-pos" : "amount-neg"}">${t.type === "deposit" ? "+" : "−"}${eur(t.total)}</span>
+            ${transactionAmount(t,eur)}
           </div>`).join("")}`);
       });
     });
@@ -337,6 +342,7 @@ function renderAccounts() {
      <td style="text-align:center"><input type="checkbox" ${a.isSystem ? "disabled" : 'data-flag="gnucash" data-id="' + a.id + '"'} ${a.roles && a.roles.gnucash ? "checked" : ""} style="width:auto; min-height:auto"></td>
      <td style="text-align:center"><input type="checkbox" ${a.isSystem ? "disabled" : 'data-flag="uebersicht" data-id="' + a.id + '"'} ${a.roles && a.roles.uebersicht ? "checked" : ""} style="width:auto; min-height:auto"></td>
      <td style="text-align:center"><input type="checkbox" aria-label="Schnapswart" ${a.isSystem ? "disabled" : 'data-flag="schnapswart" data-id="' + a.id + '"'} ${a.roles?.schnapswart ? "checked" : ""} style="width:auto; min-height:auto"></td>
+     <td style="text-align:center"><input type="checkbox" aria-label="Kneipwart" ${a.isSystem ? "disabled" : 'data-flag="kneipwart" data-id="' + a.id + '"'} ${a.roles?.kneipwart ? "checked" : ""} style="width:auto; min-height:auto"></td>
      <td>${a.isSystem ? '<span class="muted">nicht anmeldbar</span>' : `<button class="btn small" data-reset="${a.id}">Passwort zurücksetzen</button> <button class="btn small" data-delete-account="${a.id}">Löschen</button>`}</td></tr>`).join("");
   document.querySelectorAll("[data-flag]").forEach(cb => cb.onchange = async () => {
     const body = { accountId: cb.dataset.id };

@@ -118,3 +118,12 @@ test("Standardadressen für BW- und GnuCash-Namen und eine einzelne persönliche
   for (const bad of ["a@example.org,b@example.org","a@example.org\r\nBcc:x@example.org","a..b@example.de","a@b.de?cc=x","a@b","@x.de"])
     assert.equal(validAddress(bad), false);
 });
+
+test("Mehrere Portionen erhalten einen Zuschuss pro Person", () => {
+  const split = require("../public/meal-allocation");
+  const group = [{name:"Ada",role:"aktiv",cents:null,portions:3},{name:"Bea",role:"voll",cents:null}];
+  const result = split(1201,group,400);
+  assert.deepEqual(result.rows.map(r => [r.portions,r.cents,r.grant]),[[3,501,400],[1,300,0]]);
+  assert.equal(result.difference,0);
+  for (const n of [0,-1,1.5,null]) assert.throws(()=>split(1200,[{...group[0],portions:n}],400),/Portionen/);
+});

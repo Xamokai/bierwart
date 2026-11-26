@@ -112,6 +112,7 @@ function fillForm(doc, meal, template, participantTable, regular, bold) {
     if (index && !row) page = continuation();
     const baseline = sheet.firstBaseline + row * sheet.rowStep + (page === first ? 0 : tableShift);
     cell(page, "Teilnehmer " + (index + 1), person.name, 58, baseline, 143, {twoLines:true});
+    if (person.portions) cell(page, "Portionen", String(person.portions), 207, baseline, 65);
     const boxX = person.role === "aktiv" ? 416.65 : person.role === "kgast" ? 440.45 : null;
     if (boxX !== null) {
       const y = page.getHeight() - (baseline - 2.78);

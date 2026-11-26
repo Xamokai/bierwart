@@ -1,4 +1,4 @@
-# Bierwart LAN 1.11.5
+# Bierwart LAN 1.12.0
 
 ## Update einspielen
 
@@ -16,11 +16,21 @@ Am PC öffnet **Mein Konto** mit **Meine Buchungen**. Das Kontomenü führt zum 
 
 Im Ordner **Druckbeispiele** liegen die fertige Mixliste und die Preisliste der Halloweenparty als A4-PDF.
 
-1. In **Verwaltung → Konten** beim persönlichen Konto **Schnapswart** anhaken. Der Bereich erscheint unter **Mein Konto → Schnapswart**. Der Admin kann ihn direkt unter **Verwaltung → Schnapswart** öffnen.
+1. In **Verwaltung → Konten** beim persönlichen Konto **SW** anhaken. Der Bereich erscheint unter **Mein Konto → Getränkekarten (SW)**. Der Admin kann ihn direkt unter **Verwaltung → Getränkekarten (SW)** öffnen.
 2. Unter **Rezept anlegen** Name, Kategorie, Preis und Glas wählen. Für jede Zutat gibt es ein Mengenfeld, das z. B. auch „1–2 TL“ oder „Schuss“ annimmt. Mengen dürfen frei bleiben. Die zwölf Getränke der mitgegebenen Mixliste stehen beim ersten Start im Katalog. Die übernommenen Startpreise sind 5 € für Cocktails, 4 € für Longdrinks, 3 € für Alkoholfreies und 1 € für Shots.
 3. Gewünschte Getränke anhaken und **Mixliste (PDF)** oder **Preisliste (PDF)** wählen. Beide A4-Dateien lassen sich öffnen und drucken. Die Mixliste enthält Glasart, Zutaten und Mengen. Die Gästekarte zeigt den Preis je Kategorie, bei unterschiedlichen Preisen den Einzelpreis.
 4. Dieselbe Auswahl lässt sich im Katalog über das Feld **Veranstaltung** und **Auswahl hinzufügen** auf eine Veranstaltungskarte setzen. Vor Ort können Helfer bei der geöffneten Veranstaltung **Getränkekarte** wählen und weitere Kataloggetränke hinzufügen. Die beiden PDF-Schaltflächen dort drucken die tatsächlich zugeordnete Karte mit dem Namen der Veranstaltung. Gebucht wird anschließend auf der gewohnten Strichliste oder direkt auf die Veranstaltung.
 5. **Auswahl von Karte nehmen** entfernt eine Zuordnung. **Bearbeiten → Rezept löschen** entfernt das Rezept aus dem Katalog und allen Veranstaltungskarten. Beides steht dem Schnapswart und dem Admin zur Verfügung. Gebuchte Posten behalten ihren damaligen Namen und Preis. Katalogrezepte sind dauerhaft, auch wenn die Veranstaltung abläuft.
+
+## Auszählungen für Lager und Veranstaltungen
+
+Unter **Mein Konto → Auszählungen** erfassen KW (Kneipwart) und SW (Schnapswart) Flaschen aus dem Barkatalog, auch angebrochene Flaschen wie 0,75. Neue Getränke lassen sich mit Namen und Flaschenpreis ergänzen. BW zählt die aktuell unter **Produkte & Preise** hinterlegten Getränke. XXX zählt die Barkasse nach Münzen und Scheinen. Die Verwaltung kann alle drei Bereiche öffnen.
+
+Jede Zählung erhält einen Namen, ein Datum und den Anlass **Lagerzählung** oder eine ausgewählte Veranstaltung. Für Getränke aus der Vorlage ohne Preis den Stückpreis bei der Zählung eintragen. Gespeicherte Zählungen enthalten die damaligen Mengen und Preise. Das Archiv gruppiert nach Semester und darin nach Veranstaltung. Lagerzählungen stehen in jedem Semester in einem eigenen Abschnitt. XXX und Verwaltung können einzelne Zählungen oder das gesamte Archiv in dieser Reihenfolge drucken.
+
+Für eine Veranstaltung zuerst eine **Vorzählung** speichern. Über **Nachzählung erfassen** an dieser Vorzählung den Restbestand desselben Bereichs eintragen. Beide Zählungen stehen im Semester der Vorzählung, auch wenn die Veranstaltung über den Semesterwechsel geht.
+
+Nachgeholte Getränke lassen sich über **Bearbeiten** in der Vorzählung ergänzen. Der Verbrauch ergibt sich je Getränk aus Anfangsbestand plus nachgeholter Menge abzüglich Restbestand. Bei der Barkasse zählt der Zuwachs gegenüber dem Anfangsbestand. Die Nachzählung zeigt die einzelnen Differenzen und den noch offenen Betrag. Mit **Auf Veranstaltung buchen** wird dieser Betrag einmalig verbucht. Wer später eine Menge berichtigt, kann die verbleibende Korrektur separat buchen.
 
 ## Zahlungserinnerungen für XXX
 
@@ -55,9 +65,9 @@ Unter **Verwaltung → Veranstaltungen** zeigt **BW-Getränkeposten gesamt** auc
 
 ## Aktivenessen und Abrechnungs-PDF
 
-Unter **GnuCash Import / Export → Aktivenessen verwalten** können Verwaltung und XXX ein einzelnes Essen über **Formular und Rechnungen als PDF** herunterladen. **Semester als PDF** enthält die Formulare aller Essen im gewählten Semester mit den zugehörigen Rechnungsbildern. Die Abrechnung verwendet das Originalformular von 2024 mit 18 Teilnehmerzeilen. Aktiv und K-Gast werden im jeweiligen Kästchen angekreuzt. Weitere Personen folgen auf einem Zusatzblatt, danach die Rechnungsbilder. Die Felder zur Ankündigung und Portion bleiben für handschriftliche Angaben frei. Bei älteren Essen erscheinen Teilnehmergruppen und der Zuschuss pro Person nur, wenn die Angaben vorliegen.
+Unter **GnuCash Import / Export → Aktivenessen verwalten** können Verwaltung und XXX ein einzelnes Essen über **Formular und Rechnungen als PDF** herunterladen. **Semester als PDF** enthält die Formulare aller Essen im gewählten Semester mit den zugehörigen Rechnungsbildern. Die Abrechnung verwendet das Originalformular von 2024 mit 18 Teilnehmerzeilen. Aktiv und K-Gast werden im jeweiligen Kästchen angekreuzt. Weitere Personen folgen auf einem Zusatzblatt, danach die Rechnungsbilder. Die Portionszahl steht je Person in der Spalte „Portion“. Bei älteren Essen bleibt sie frei, wenn sie nicht erfasst wurde. Bei älteren Essen erscheinen Teilnehmergruppen und der Zuschuss pro Person nur, wenn die Angaben vorliegen.
 
-Im selben Bereich steht **Zuschuss pro Aktiv/K-Gast in €**. Der Standard ist **4,00 €**. Beim Anlegen eines Essens für jede Person **Vollpreis**, **Aktiv** oder **K-Gast** auswählen. Bei mindestens einem Teilnehmer teilt Bierwart die Auslagen zunächst gleichmäßig in Cent auf. **Aktiv** und **K-Gast** erhalten den Zuschuss höchstens bis zur Höhe ihres Anteils. Das Sammelkonto **Gast / Mitgliederwerbung** zählt als ein K-Gast. Ein leerer Preis wird automatisch berechnet. Manuelle Preise müssen zusammen mit dem Zuschuss die gesamte Rechnung ergeben.
+Im selben Bereich steht **Zuschuss pro Aktiv/K-Gast in €**. Der Standard ist **4,00 €**. Beim Anlegen eines Essens für jede Person **Vollpreis**, **Aktiv** oder **K-Gast** auswählen. Die Anzahl der Portionen steht anfangs auf eins. Bierwart verteilt die Gesamtkosten centgenau nach Portionen und gewährt den Zuschuss je berechtigter Person einmal. **Aktiv** und **K-Gast** erhalten den Zuschuss höchstens bis zur Höhe ihres Anteils. Das Sammelkonto **Gast / Mitgliederwerbung** zählt als ein K-Gast. Ein leerer Preis wird automatisch berechnet. Manuelle Preise müssen zusammen mit dem Zuschuss die gesamte Rechnung ergeben.
 
 Für bestehende BW-Installationen den Server wie oben aktualisieren. Das ZIP bringt die PDF-Abhängigkeiten für reguläres 64-Bit-Linux mit. Bei einer Installation auf Windows, macOS oder einer anderen Architektur im Ordner **getraenkekasse** zuerst `npm ci` ausführen, damit Node die zur Plattform passenden Bildbibliotheken installiert.
 
