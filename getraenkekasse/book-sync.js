@@ -34,7 +34,7 @@ function planAccounts(book,db,g) {
   for(const a of input){
     const d=descriptor(a,g);
     const uniqueCode=counts.get(d.kind+":"+d.code)===1;
-    const pool=db.accounts.filter(x=>!x.isSystem && Boolean(x.isEvent)===(d.kind!=="person"));
+    const pool=db.accounts.filter(x=>!x.isSystem && !x.fixedBookCode && Boolean(x.isEvent)===(d.kind!=="person"));
     const reserved=pool.find(x=>x.bookProposed && x.gnucashAccount!==d.path && parent(x.gnucashAccount)===parent(d.path) && codeOf(x.gnucashAccount)===d.code);
     if(reserved)conflicts.push("Nummer "+d.code+" auch für "+reserved.name+" vorgemerkt. Vor dem BW-Export dessen Kontenzuordnung korrigieren.");
     const samePath=pool.filter(x=>x.gnucashAccount===d.path);
@@ -62,7 +62,7 @@ function planAccounts(book,db,g) {
     plans.push({...d,id,action});resolved.set(d.path,{...d,id});
   }
   // Explicit manual assignments may live outside the standard chart.
-  for(const a of db.accounts.filter(a=>a.gnucashAccount && !a.deleted && !a.isSystem))
+  for(const a of db.accounts.filter(a=>a.gnucashAccount && !a.deleted && !a.isSystem && !a.fixedBookCode))
     if(!resolved.has(a.gnucashAccount) && !input.some(x=>x.path===a.gnucashAccount))
       resolved.set(a.gnucashAccount,{kind:a.isEvent?"event":"person",id:a.id,name:a.name,path:a.gnucashAccount});
   return {plans,conflicts,resolved};

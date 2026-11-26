@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const {eventMode, eventLabel, visibleEvent, activeDrinks, normalizedName} = require("./event-mode");
+const {eventMode, eventLabel, tallyLabel, visibleEvent, activeDrinks, normalizedName} = require("./event-mode");
 const {initialRecipes, eventRecipes, listedRecipe, offer, mountBar} = require("./bar-catalog");
 const splitActiveMeal = require("./public/meal-allocation");
 const {mailProfile, validAddress, nameParts, draftFor} = require("./debt-mail");
@@ -84,9 +84,23 @@ for (const [k, v] of Object.entries(GNUCASH_DEFAULTS)) {
 }
 function gnu() { return db.settings.gnucash; }
 
+function bookCode(path) {
+  const code = db.settings.bookCatalog?.[path]?.code;
+  return String(code || "").trim() || codeOf(path) || (/^\d+$/.test(leaf(path)) ? leaf(path) : "");
+}
+
 /* Kontopfad eines Mitglieds-/Veranstaltungskontos für GnuCash */
 function gnucashAccountPath(acc) {
   if (!acc) return "?";
+  if (acc.fixedBookCode) {
+    const matches = path => path && bookCode(path) === acc.fixedBookCode;
+    if (matches(acc.gnucashAccount)) return acc.gnucashAccount;
+    const paths = Object.keys(db.settings.bookCatalog || {}).filter(matches);
+    if (!paths.length && !db.settings.bookTreeLoaded) {
+      paths.push(...new Set(db.accounts.filter(a => !a.deleted).map(a => a.gnucashAccount).filter(matches)));
+    }
+    return paths.length === 1 ? paths[0] : "";
+  }
   if (acc.gnucashAccount) return acc.gnucashAccount;          // manuell überschrieben
   if (acc.isEvent) return `${gnu().eventAccount}:${acc.name}`;
   return gnu().useMemberPrefix ? `${gnu().memberPrefix}:${acc.name}` : acc.name;
@@ -307,6 +321,18 @@ function ensureEventTemplates() {
   db.settings.eventTemplates15 = true;
   saveDB(db);
 }
+
+function ensureCouleurAccount() {
+  if (db.accounts.some(a => a.fixedBookCode === "1800")) return;
+  let account = db.accounts.find(a => a.isEvent && !a.deleted && a.name.trim().toLowerCase() === "couleur");
+  if (!account) {
+    account = {id:newId(), name:"Couleur", isEvent:true, customDrinks:[], createdAt:new Date().toISOString()};
+    db.accounts.push(account);
+  }
+  account.permanent = true;
+  account.fixedBookCode = "1800";
+  saveDB(db);
+}
 /* ---------- Produkte aus CSV (assets/res/products.csv) ---------- */
 function parsePrice(s) {
   const value = String(s ?? "").trim().replace(",", ".");
@@ -362,6 +388,7 @@ app.use("/assets", express.static(path.join(ROOT, "assets")));
 app.use(express.static(path.join(ROOT, "public")));
 ensureSeedEvents();
 ensureEventTemplates();
+ensureCouleurAccount();
 
 function requirePin(req, res, next) {
   if (req.get("X-Admin-Pin") === ADMIN_PIN) return next();
@@ -444,16 +471,31 @@ app.get("/api/tally/accounts", (req, res) => {
   const event = eventId && db.accounts.find(a => a.id === eventId);
   if (eventId && (!visibleEvent(event) || eventMode(event) !== "personal"))
     return res.status(404).json({error:"Diese Veranstaltungsstrichliste ist nicht verfügbar."});
-  const now = Date.now();
-  const since = now - 24 * 60 * 60 * 1000;
-  const activeIds = new Set(db.transactions
-    .filter(t => t.type === "purchase" && !t.balanceSync && !t.sourceBookGuid && !t.activeMealId && Date.parse(t.date) >= since && Date.parse(t.date) <= now)
-    .map(t => t.accountId));
-  res.json(db.accounts
-    .filter(a => !a.deleted && !a.isSystem && (!a.isEvent || (!event && eventMode(a) === "collective")))
-    .map(a => ({ id: a.id, name: a.name, priority: !!a.priority || eventMode(a) === "collective", activeLast24Hours: activeIds.has(a.id) }))
-    .sort((a, b) => (b.priority - a.priority) || a.name.localeCompare(b.name, "de")));
+  res.json(tallyAccounts(event));
 });
+
+function tallyAccounts(event) {
+  const now = Date.now();
+  const weekStart = now - 7 * 864e5;
+  const latest = new Map();
+  for (const tx of db.transactions) {
+    if (tx.type !== "purchase" || tx.balanceSync || tx.sourceBookGuid || tx.activeMealId) continue;
+    const time = Date.parse(tx.date);
+    if (time >= weekStart && time <= now && time > (latest.get(tx.accountId) || 0)) latest.set(tx.accountId, time);
+  }
+  const ranks = {collective:0, priority:1, recent:2, other:3};
+  const accounts = [];
+  for (const a of db.accounts) {
+    if (a.deleted || a.isSystem) continue;
+    const collective = eventMode(a) === "collective";
+    if (a.isEvent && (event || !collective)) continue;
+    const name = tallyLabel(a);
+    const group = collective ? "collective" : a.priority ? "priority" : latest.has(a.id) ? "recent" : "other";
+    accounts.push({id:a.id, name, fullName:name !== a.name ? a.name : undefined, group,
+      priority:!!a.priority || collective, activeLast24Hours:latest.get(a.id) >= now - 864e5});
+  }
+  return accounts.sort((a,b) => ranks[a.group] - ranks[b.group] || a.name.localeCompare(b.name, "de"));
+}
 
 app.post("/api/accounts", (req, res) => {
   const name = String(req.body.name || "").trim();
@@ -982,10 +1024,7 @@ function odsEscape(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 function buildBackupOds() {
-  const prio = db.accounts
-    .filter(a => !a.deleted && !a.isSystem && ((!a.isEvent && a.priority) || eventMode(a) === "collective"))
-    .map(a => a.name)
-    .sort((a, b) => a.localeCompare(b, "de"));
+  const prio = tallyAccounts().filter(a => a.priority).map(a => a.name);
   const drinks = loadProducts().filter(p => p.tally).slice(0, 5)
     .map(d => ({ name: d.name, price: d.price, cols: d.ticks === 10 ? 5 : 10 })); // 20 Striche=10 Spalten, 10 Striche=5 Spalten
   const BLANK_ROWS = 18;
@@ -1248,11 +1287,10 @@ function eventTotals() {
 }
 
 function adminAccountNumber(account) {
+  if (account.fixedBookCode) return account.fixedBookCode;
   const path = account.gnucashAccount || (account.systemKind === "xxx-card" ? db.settings.xxxCardAccountNumber : "");
   if (!path) return "";
-  const code = db.settings.bookCatalog?.[path]?.code;
-  const name = leaf(path);
-  return String(code || "").trim() || codeOf(path) || (/^\d+$/.test(name) ? name : "");
+  return bookCode(path);
 }
 
 app.get("/api/admin/accounts", allow("uebersicht"), (req, res) => {
@@ -1459,7 +1497,9 @@ const cents = value => Math.round(Number(value) * 100);
 function accountPath(id) {
   const a = db.accounts.find(a => a.id === id);
   if (!a) throw Error("Unbekanntes BW-Konto: " + id);
-  return gnucashAccountPath(a);
+  const path = gnucashAccountPath(a);
+  if (!path) throw Error("Für " + a.name + " den GnuCash-Kontopfad " + a.fixedBookCode + " zuordnen oder den Kontenbaum einlesen.");
+  return path;
 }
 function groupsFor(sel, number, summaryDate) {
   const groups = [];
@@ -1573,6 +1613,8 @@ app.put("/api/admin/gnucash/accounts/:id",allow("gnucash"),(req,res) => {
   if (!a) return res.status(404).json({error:"BW-Konto fehlt."});
   const value = String(req.body.path || "").trim();
   if (value.length > 800 || /[\r\n]/.test(value)) return res.status(400).json({error:"Ungültiger Kontopfad."});
+  if (value && a.fixedBookCode && bookCode(value) !== a.fixedBookCode)
+    return res.status(400).json({error:"Für " + a.name + " den Kontopfad mit der Nummer " + a.fixedBookCode + " wählen."});
   if (value && assignableAccounts().some(b=>b.id!==a.id && !b.isEvent && !a.isEvent && gnucashAccountPath(b)===value))
     return res.status(409).json({error:"Pfad schon einer anderen Person zugeordnet."});
   const old = a.gnucashAccount || "";

@@ -14,7 +14,7 @@
     <button class="btn" id="btnEventDrinks" disabled>Temporäre Getränke</button>
     <button class="btn gold" id="btnActiveMeal">Aktivenessen anlegen</button>
   </div>
-  <div class="grid" id="names" aria-label="Konten"></div>
+  <div id="names" aria-label="Konten"></div>
 </main>
 <nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html">Mein Konto</a><a href="admin.html">Verwaltung</a></nav>
 
@@ -55,18 +55,30 @@ function openSheet(account) {
 }
 function renderNames() {
   const q = $("search").value.trim().toLocaleLowerCase("de");
-  const list = accounts.filter(a => q ? a.name.toLocaleLowerCase("de").includes(q) : a.priority || a.activeLast24Hours);
+  const titles = {collective:"Sammelkonten", priority:"Priorisierte Konten", recent:"In den letzten 7 Tagen gebucht", other:"Weitere Konten"};
   $("names").replaceChildren();
-  list.forEach(a => {
+  let grid, currentGroup;
+  for (const a of accounts) {
+    if (q ? ![a.name, a.fullName].some(n => n?.toLocaleLowerCase("de").includes(q)) : a.group === "other") continue;
+    if (a.group !== currentGroup) {
+      currentGroup = a.group;
+      const section = document.createElement("section");
+      section.className = "event-group";
+      const heading = document.createElement("h3");
+      heading.textContent = titles[a.group];
+      grid = document.createElement("div");
+      grid.className = "grid";
+      section.append(heading, grid);
+      $("names").append(section);
+    }
     const b = document.createElement("button");
-    b.className = "tile" + (a.priority ? " prio" : "");
-    if (a.priority) b.setAttribute("aria-description", "Priorisiertes Konto");
+    b.className = "tile" + (a.group === "priority" ? " prio" : "");
     b.textContent = a.name; b.onclick = () => openSheet(a);
-    $("names").append(b);
-  });
-  if (!list.length) {
+    grid.append(b);
+  }
+  if (!grid) {
     const empty = document.createElement("p"); empty.className = "muted empty-state";
-    empty.textContent = q ? "Kein passendes Konto gefunden." : "Keine priorisierten oder in den letzten 24 Stunden aktiven Konten. Über die Suche findest du alle Namen.";
+    empty.textContent = q ? "Kein passendes Konto gefunden." : "Keine Konten in der Vorauswahl. Über die Suche findest du alle Namen.";
     $("names").append(empty);
   }
 }

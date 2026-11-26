@@ -20,7 +20,7 @@ function prepareAccounts(db,g) {
   const neededEvents = new Set(db.transactions
     .filter(t => t.type === "purchase" && !t.exported && t.eventId && t.eventId !== t.accountId)
     .map(t => t.eventId));
-  for(const a of db.accounts.filter(a=>!a.isSystem && (!a.deleted || neededEvents.has(a.id)))){
+  for(const a of db.accounts.filter(a=>!a.isSystem && !a.fixedBookCode && (!a.deleted || neededEvents.has(a.id)))){
     let path=a.gnucashAccount;
     if(!path){
       const base=a.isEvent?g.eventAccount:g.memberPrefix;

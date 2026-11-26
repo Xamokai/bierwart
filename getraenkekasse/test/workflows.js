@@ -23,10 +23,11 @@ test("Lokale Schnittstelle und Netzmaske", () => {
   assert.equal(status("192.168.9.10"),200);
   assert.equal(status("192.168.10.10"),403);
 });
-test("Konto, Buchungslauf und GnuCash-Rückimport", async t => {
+async function startTestServer(t, db) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(),"bierwart-test-"));
   for (const item of ["server.js","bar-catalog.js","bar-pdf.js","pdf-text.js","debt-mail.js","meal-pdf.js","forms","fonts","event-mode.js","book-format.js","book-sync.js","book-exchange.js","lan.js","gnucash-sync.js","config.json","public","assets"]) fs.cpSync(path.join(root,item),path.join(tmp,item),{recursive:true});
   fs.mkdirSync(path.join(tmp,"data"));
+  if (db) fs.writeFileSync(path.join(tmp, "data/db.json"), JSON.stringify(db));
   const server = spawn(process.execPath,["server.js"],{cwd:tmp,env:{...process.env,BW_PORT:"0",BW_HOST:"127.0.0.1",BW_ADMIN_PIN:"778899",NODE_PATH:path.join(root,"node_modules")},stdio:["ignore","pipe","inherit"]});
   t.after(async () => { if(server.exitCode===null){server.kill();await once(server,"exit");} fs.rmSync(tmp,{recursive:true,force:true}); });
   const [line] = await once(server.stdout,"data");
@@ -38,6 +39,43 @@ test("Konto, Buchungslauf und GnuCash-Rückimport", async t => {
     assert.equal(r.status,status,JSON.stringify(result));
     return result;
   }
+  return {call, base, admin, tmp};
+}
+
+test("Strichliste gruppiert Altbestände, Couleur bucht auf GnuCash 1800", async t => {
+  const people = ["Anna", "Beat", "Clara", "Dora", "Eva", "Fritz"];
+  const path1800 = "Bestandskonten:Philisterverein";
+  const accounts = people.map(name => ({id:name, name, priority:name === "Anna"}));
+  const events = ["Gast / Mitgliederwerbung", "Löschbier / Grillkohle", "Verrechnung Philister", "Divali"];
+  accounts.push(...events.map(name => ({id:name, name, isEvent:true, permanent:true})));
+  const purchase = (accountId, days, fields = {}) => ({
+    id:accountId, accountId, type:"purchase", date:new Date(Date.now() - days * 864e5).toISOString(),
+    items:[], total:1, exported:true, ...fields
+  });
+  const transactions = [purchase("Anna", 1), purchase("Beat", 6.99), purchase("Clara", 7.01),
+    purchase("Dora", 0, {type:"deposit"}), purchase("Eva", -1), purchase("Fritz", 0, {sourceBookGuid:"import"})];
+  const {call, admin} = await startTestServer(t, {accounts, transactions, settings:{bookCatalog:{[path1800]:{code:"1800"}}}});
+  const tally = await call("/api/tally/accounts");
+  assert.deepEqual(tally.map(a => [a.name, a.group]), [
+    ["Couleur","collective"], ["Gast","collective"], ["Löschbier","collective"], ["Philister","collective"],
+    ["Anna","priority"], ["Beat","recent"], ...people.slice(2).map(name => [name,"other"])]);
+  assert.equal(tally.find(a => a.name === "Gast").id, events[0]);
+  assert.equal(tally.find(a => a.name === "Beat").activeLast24Hours, false);
+  assert.deepEqual((await call("/api/tally/accounts?event=Divali")).map(a => a.name), people);
+  const couleur = tally[0];
+  const mapping = "/api/admin/gnucash/accounts";
+  assert.equal((await call(mapping)).find(a => a.id === couleur.id).path, path1800);
+  await call(mapping + "/" + couleur.id, {path:"Konten:1801 Falsch"}, admin, "PUT", 400);
+  await call("/api/purchase", {accountId:couleur.id, items:[{name:"Bier",qty:1}]});
+  const endpoint = "/api/admin/export-runs";
+  const run = await call(endpoint, {});
+  const book = readBook(Buffer.from(await call(endpoint + "/" + run.id + "/csv")));
+  const debit = book.transactions[0].splits.find(s => s.path === path1800);
+  assert.equal(splitCents(debit), 150);
+});
+
+test("Konto, Buchungslauf und GnuCash-Rückimport", async t => {
+  const {call, base, admin, tmp} = await startTestServer(t);
   const dummy=await call("/api/accounts",{name:"Temporärer Test",surname:"Test"});
   const login=await call("/api/login",{name:"Temporärer Test",password:"Test"});
   const del="/api/admin/accounts/"+dummy.id;

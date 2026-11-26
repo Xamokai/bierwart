@@ -6,11 +6,17 @@ const directNames = new Set([
   "abkneipe", "ankneipe", "stiftungsfestkneipe", "fuxenkneipe", "burschungskneipe",
   "himmelfahrtsbummel", "kneipen", "stempferbummel", "stiftungstag", "stockwerksparty"
 ]);
-const collectiveNames = new Set([
-  "arbeitseinsatz", "barzahler", "bahrzahler", "gast", "gast mitgliederwerbung", "mitgliederwerbung",
-  "grillkohle", "loschbier", "grillkohle loschbier", "verrechnung philister",
-  "verrechnung philisterium", "verrechnungskonto philisterverein"
+const collectiveLabels = new Map([
+  ["arbeitseinsatz", "Arbeitseinsatz"], ["barzahler", "Barzahler"], ["bahrzahler", "Barzahler"],
+  ["gast", "Gast"], ["gast mitgliederwerbung", "Gast"], ["mitgliederwerbung", "Gast"],
+  ["loschbier", "Löschbier"], ["grillkohle", "Löschbier"], ["grillkohle loschbier", "Löschbier"],
+  ["loschbier grillkohle", "Löschbier"], ["verrechnung philister", "Philister"],
+  ["verrechnung philisterium", "Philister"], ["verrechnungskonto philisterverein", "Philister"],
+  ["couleur", "Couleur"]
 ]);
+function tallyLabel(account) {
+  return (account.isEvent && collectiveLabels.get(normalizedName(account.name))) || account.name;
+}
 const hiddenNames = new Set([
   "aktivenfahrt", "berg", "durnstein", "feuerzangenbowle", "gansessen", "totengedenken",
   "weihnachten", "wissenschaftliche abende"
@@ -26,7 +32,7 @@ function eventMode(a) {
   const name = normalizedName(a.name);
   const mappedName = normalizedName(leaf);
   if ([name, mappedName].some(n => n.startsWith("e a ") || n === "e a" || hiddenNames.has(n))) return "hidden";
-  if (collectiveNames.has(name)) return "collective";
+  if (collectiveLabels.has(name)) return "collective";
   if (directNames.has(name) || /^(1800|4150)\b/.test(leaf)) return "direct";
   return "personal";
 }
@@ -42,4 +48,4 @@ function visibleEvent(a) {
 function activeDrinks(event) {
   return (event.customDrinks || []).filter(d => !d.expiresAt || Date.parse(d.expiresAt) > Date.now());
 }
-module.exports = {eventMode, eventLabel, visibleEvent, activeDrinks, normalizedName};
+module.exports = {eventMode, eventLabel, tallyLabel, visibleEvent, activeDrinks, normalizedName};

@@ -1,4 +1,4 @@
-# Bierwart LAN 1.11.2
+# Bierwart LAN 1.11.3
 
 ## Update einspielen
 
@@ -35,11 +35,11 @@ Ein dünner orangefarbener Rand kennzeichnet priorisierte Konten und bei der Ver
 | Einträge | Wo und wie gebucht wird |
 |---|---|
 | Abkneipe, Ankneipe, Stiftungsfestkneipe, Fuxenkneipe, Himmelfahrtsbummel, Kneipen, Stempferbummel, Stiftungstag, Stockwerksparty | Unter **Veranstaltung** auswählen und direkt auf das zugeordnete Konto buchen. Sonstige Anlässe mit Zuordnung auf 1800 oder 4150 verwenden ebenfalls die Direktbuchung. |
-| Arbeitseinsatz, Barzahler, Gast / Mitgliederwerbung, Grillkohle / Löschbier, Verrechnung Philister | Auf der **Strichliste** stehen diese Sammelkonten nach Übernahme des Kontenbaums direkt neben den Namen. Sie besitzen keinen Personenlogin. Die bestehende GnuCash-Zuordnung gilt weiter. |
+| Arbeitseinsatz, Barzahler, Couleur, Gast, Löschbier, Philister | Diese Sammelkonten stehen oben auf der **Strichliste**. Couleur hat eine eigene Kachel und bucht auf GnuCash-Konto **1800**. Der Kontenbaum liefert den vollständigen Pfad. Er lässt sich auch unter **GnuCash Import / Export → Kontenzuordnung** hinterlegen. |
 | Aktivenfahrt, Berg, Dürnstein, E/A-Konten, Feuerzangenbowle, Gansessen, Totengedenken, Weihnachten, Wissenschaftliche Abende | Im Kiosk ausgeblendet. Die Daten stehen für Auswertung und Buchhaltung weiterhin zur Verfügung. |
 | Cocktailabend/Sommerparty, Divali, Halloweenparty, Tresenbachelor, Stiftungsfestball | Unter **Veranstaltung** die Party öffnen. Es erscheint dieselbe Strichliste mit Namenskacheln und Suche wie im normalen Betrieb. Namen antippen, Getränke anstreichen und mit **Buchen** bestätigen. GnuCash belastet das Personenkonto und schreibt den Betrag dem Gegenkonto der Veranstaltung gut. Weitere Veranstaltungen ohne Sonderzuordnung verwenden ebenfalls die Personenstrichliste. |
 
-Ohne Suche erscheinen nur priorisierte Konten und Personen mit einem Getränkekauf in den letzten 24 Stunden. Über die Suche findest du die übrigen Konten. Die Regel gilt für die normale Strichliste und für Personenstrichlisten bei Veranstaltungen.
+Unter den Sammelkonten stehen zuerst die priorisierten Personen und danach die Personen mit einem Getränkekauf in den vergangenen sieben Tagen. Jede Gruppe ist alphabetisch sortiert. Über die Suche findest du auch die übrigen Personen und die Langnamen der Sammelkonten. Bei Personenstrichlisten für Veranstaltungen erscheinen nur die Personengruppen.
 
 Eine Getränkekachel fügt einen Strich hinzu. **−** nimmt einen einzelnen Strich zurück, **Zurücksetzen** leert die Auswahl. Erst **Buchen** schreibt die Buchung. Auf dem Handy lässt sich die Auswahl unter **Mein Konto → Getränke kaufen** öffnen.
 
