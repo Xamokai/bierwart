@@ -545,8 +545,8 @@ details.daygroup > summary { min-height:48px; }
 .list-item, .list-booking, .bar-choice, .bar-row, .audit-meta, .debt-draft, .stock-record, .dialog-head { overflow-wrap:break-word; }
 .details, .section-head > *, .row > *, .card, .bar-row > *, .participant-row > *, fieldset { min-width:0; }
 .card pre { white-space:pre-wrap; overflow-wrap:anywhere; }
-.table-scroll, .stock-table, .stock-options, .bw-dialog, .debt-list { overscroll-behavior:contain; }
-.table-scroll, .stock-table { max-width:100%; }
+.stock-options, .bw-dialog, .debt-list { overscroll-behavior:contain; }
+.table-scroll, .stock-table { max-width:100%; overscroll-behavior-x:contain; }
 thead { background:var(--bg); } th { color:var(--muted); }
 th.right, td.right { white-space:nowrap; }
 details.daygroup .body { min-width:0; }

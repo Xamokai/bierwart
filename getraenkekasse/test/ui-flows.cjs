@@ -176,7 +176,15 @@ async function run() {
     await d.goto(base+"/admin.html");await d.fill("#pin","246810");await d.locator("#pin").press("Enter");
     await d.locator("#dash .dash-choice").filter({hasText:"Marlene Hofmann"}).click();
     await d.locator("#dashDetail h3").filter({hasText:"Marlene Hofmann"}).waitFor();await fit(d);
-    for(const tab of ["accounts","events","products","bar","stock","audit","gnucash","updates"]) {
+    await d.click('[data-tab="accounts"]');await fit(d);
+    await d.locator("#accTable tr").nth(2).locator("td").nth(1).hover();
+    const startY=await d.evaluate(()=>window.scrollY);
+    await d.mouse.wheel(0,200);
+    await d.waitForFunction(y=>window.scrollY>y,startY);
+    const lowerY=await d.evaluate(()=>window.scrollY);
+    await d.mouse.wheel(0,-200);
+    await d.waitForFunction(y=>window.scrollY<y,lowerY);
+    for(const tab of ["events","products","bar","stock","audit","gnucash","updates"]) {
       await d.click('[data-tab="'+tab+'"]');await d.locator("#tab-"+tab).waitFor();await fit(d);
     }
     await d.locator("#updateActive").filter({hasText:"v"}).waitFor();
