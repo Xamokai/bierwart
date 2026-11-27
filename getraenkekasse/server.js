@@ -1060,7 +1060,7 @@ function buildBackupOds() {
   const cellEmpty = (style, n = 1) =>
     `<table:table-cell table:style-name="${style}"${n > 1 ? ` table:number-columns-repeated="${n}"` : ""}/>`;
 
-  let rows = "";
+  let rows = "<table:table-header-rows>";
 
   rows += `<table:table-row>` +
     `<table:table-cell table:style-name="cTitle" office:value-type="string"><text:p>Strichliste – Backup</text:p></table:table-cell>` +
@@ -1076,7 +1076,7 @@ function buildBackupOds() {
     head += `<table:table-cell table:style-name="cDrink" table:number-columns-spanned="${d.cols}" office:value-type="string"><text:p>${odsEscape(d.name)} (${d.price.toFixed(2).replace(".", ",")} €)</text:p></table:table-cell>`;
     if (d.cols > 1) head += `<table:covered-table-cell table:number-columns-repeated="${d.cols - 1}"/>`;
   });
-  rows += `<table:table-row>${head}</table:table-row>`;
+  rows += `<table:table-row>${head}</table:table-row></table:table-header-rows>`;
 
   // Datenzeilen: pro Person zwei Zeilen (obere 1..cols, untere cols+1..2*cols)
   const names = prio.concat(Array.from({ length: BLANK_ROWS }, () => ""));
@@ -1096,19 +1096,20 @@ function buildBackupOds() {
   const content = `<?xml version="1.0" encoding="UTF-8"?>
 <office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2">
 <office:automatic-styles>
-<style:style style:name="colName" style:family="table-column"><style:table-column-properties style:column-width="3.6cm"/></style:style>
+<style:style style:name="tallySheet" style:family="table" style:master-page-name="Default"/>
+<style:style style:name="colName" style:family="table-column"><style:table-column-properties style:column-width="5.4cm"/></style:style>
 <style:style style:name="colBox" style:family="table-column"><style:table-column-properties style:column-width="0.62cm"/></style:style>
 <style:style style:name="rData" style:family="table-row"><style:table-row-properties style:row-height="0.6cm"/></style:style>
 <style:style style:name="cTitle" style:family="table-cell"><style:text-properties fo:font-size="15pt" fo:font-weight="bold"/></style:style>
 <style:style style:name="cMeta" style:family="table-cell"><style:text-properties fo:font-size="9pt" fo:color="#555555"/></style:style>
 <style:style style:name="cHead" style:family="table-cell"><style:table-cell-properties fo:background-color="#f4efe2" fo:border="0.5pt solid #999999" style:vertical-align="middle"/><style:text-properties fo:font-size="9pt" fo:font-weight="bold"/></style:style>
 <style:style style:name="cDrink" style:family="table-cell"><style:table-cell-properties fo:background-color="#f4efe2" fo:border="0.5pt solid #999999"/><style:paragraph-properties fo:text-align="center"/><style:text-properties fo:font-size="9pt" fo:font-weight="bold"/></style:style>
-<style:style style:name="cName" style:family="table-cell"><style:table-cell-properties fo:border="0.5pt solid #999999" style:vertical-align="middle"/><style:text-properties fo:font-size="10pt"/></style:style>
+<style:style style:name="cName" style:family="table-cell"><style:table-cell-properties fo:wrap-option="wrap" fo:border="0.5pt solid #999999" style:vertical-align="middle"/><style:text-properties fo:font-size="10pt"/></style:style>
 <style:style style:name="cTick" style:family="table-cell"><style:table-cell-properties fo:background-color="#fcfbf7" fo:border="0.4pt solid #cccccc"/><style:paragraph-properties fo:text-align="center"/><style:text-properties fo:font-size="7pt" fo:color="#b0b0b0"/></style:style>
 <style:style style:name="cTickFive" style:family="table-cell"><style:table-cell-properties fo:background-color="#faf3df" fo:border="0.5pt solid #d4af37"/><style:paragraph-properties fo:text-align="center"/><style:text-properties fo:font-size="7pt" fo:color="#9a7d1e" fo:font-weight="bold"/></style:style>
 </office:automatic-styles>
 <office:body><office:spreadsheet>
-<table:table table:name="Strichliste">
+<table:table table:name="Strichliste" table:style-name="tallySheet">
 ${columns}
 ${rows}
 </table:table>
@@ -1118,7 +1119,7 @@ ${rows}
   const styles = `<?xml version="1.0" encoding="UTF-8"?>
 <office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2">
 <office:automatic-styles>
-<style:page-layout style:name="pm1"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm" style:print-orientation="portrait" fo:margin-top="1cm" fo:margin-bottom="1cm" fo:margin-left="1cm" fo:margin-right="1cm" style:scale-to-pages="1" style:table-centering="horizontal"/></style:page-layout>
+<style:page-layout style:name="pm1"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm" style:print-orientation="portrait" fo:margin-top="1cm" fo:margin-bottom="1cm" fo:margin-left="1cm" fo:margin-right="1cm" style:scale-to-X="1" style:scale-to-Y="0" style:table-centering="horizontal"/></style:page-layout>
 </office:automatic-styles>
 <office:master-styles><style:master-page style:name="Default" style:page-layout-name="pm1"/></office:master-styles>
 </office:document-styles>`;

@@ -1,21 +1,20 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="theme-color" content="#14120d"><script src="theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Mein Konto – Getränkekasse</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="account-page">
-<header class="app">
-  <h1>Mein Konto</h1>
-  <button class="btn small" id="btnLogout" style="display:none">Abmelden</button>
+<header class="app"><a class="tally-home" href="strichliste.html" aria-label="Zurück zur Strichliste" title="Zurück zur Strichliste"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tally-5"></use></svg></a>
+  <button class="icon-action logout-action" id="btnLogout" type="button" style="display:none" aria-label="Abmelden" title="Abmelden"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#log-out"></use></svg></button>
 </header>
 
-<main>
+<main><h1 class="page-title account-heading">Mein Konto</h1>
   <!-- Login -->
   <section id="login" style="max-width:440px; margin:30px auto">
-    <div class="card">
+    <form id="memberLogin" class="card">
       <h2 style="margin-top:0">Anmelden</h2>
       <label for="loginName">Name</label>
       <div style="position:relative; margin-bottom:12px">
@@ -23,41 +22,45 @@
         <div class="suggest" id="suggest"></div>
       </div>
       <label for="loginPw">Passwort</label>
-      <input id="loginPw" type="password" autocomplete="current-password" placeholder="Passwort">
+      <input id="loginPw" enterkeyhint="go" type="password" autocomplete="current-password" placeholder="Passwort">
       <button class="btn gold" id="btnLogin" style="width:100%; margin-top:14px">Anmelden</button>
       <div class="muted" role="status" id="loginMsg" style="margin-top:10px"></div>
-    </div>
+    </form>
     <p class="muted" style="text-align:center">Beim ersten Login ist dein Nachname das Passwort. Neue Konten können an der Strichliste oder in der Verwaltung angelegt werden.</p>
   </section>
 
   <nav id="accountNav" class="tabs" aria-label="Kontobereiche" hidden>
-    <button type="button" class="btn" aria-controls="history">Meine Buchungen</button>
-    <button type="button" class="btn" aria-controls="shop">Getränke kaufen</button>
-    <button type="button" class="btn" aria-controls="emailPanel passwordPanel">Kontoeinstellungen</button>
-    <button type="button" class="btn" aria-controls="secDash">Kontenübersicht (BW)</button>
-    <button type="button" class="btn" aria-controls="secBar">Getränkekarten (SW)</button>
-    <button type="button" class="btn" aria-controls="secStock">Auszählungen</button>
-    <button type="button" class="btn" aria-controls="secProd">Produkte &amp; Preise (BW)</button>
-    <button type="button" class="btn" aria-controls="debtMails">Zahlungserinnerungen (XXX)</button>
-    <button type="button" class="btn" aria-controls="secGnu">GnuCash Import / Export (XXX)</button>
-    <button type="button" class="btn" aria-controls="secAudit">Änderungsprotokoll (XXX)</button>
+    <button type="button" class="btn" aria-controls="history" data-title="Meine Buchungen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#receipt-text"></use></svg><span class="nav-label">Verlauf</span></button>
+    <button type="button" class="btn" aria-controls="shop" data-title="Getränke kaufen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#beer"></use></svg><span class="nav-label">Getränke</span></button>
+    <button id="accountMore" class="btn" type="button" aria-expanded="false" aria-haspopup="dialog" aria-controls="moreDialog"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#ellipsis"></use></svg><span class="nav-label">Mehr</span></button>
+    <div id="moreViews">
+    <button type="button" class="btn" aria-controls="emailPanel passwordPanel"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#settings"></use></svg><span class="nav-label">Kontoeinstellungen</span></button>
+    <button type="button" class="btn" aria-controls="secDash"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#layout-dashboard"></use></svg><span class="nav-label">Kontenübersicht (BW)</span></button>
+    <button type="button" class="btn" aria-controls="secBar"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#martini"></use></svg><span class="nav-label">Getränkekarten (SW)</span></button>
+    <button type="button" class="btn" aria-controls="secStock"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#clipboard-list"></use></svg><span class="nav-label">Auszählungen</span></button>
+    <button type="button" class="btn" aria-controls="secProd"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tags"></use></svg><span class="nav-label">Produkte &amp; Preise (BW)</span></button>
+    <button type="button" class="btn" aria-controls="debtMails"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#mail"></use></svg><span class="nav-label">Zahlungserinnerungen (XXX)</span></button>
+    <button type="button" class="btn" aria-controls="secGnu"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#book-open"></use></svg><span class="nav-label">GnuCash Import / Export (XXX)</span></button>
+    <button type="button" class="btn" aria-controls="secAudit"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#scroll-text"></use></svg><span class="nav-label">Änderungsprotokoll (XXX)</span></button>
+    </div>
   </nav>
+
+  <dialog id="moreDialog" class="bw-dialog compact-dialog" aria-labelledby="moreTitle">
+    <div class="dialog-head"><h2 id="moreTitle">Weitere Bereiche</h2><button class="btn ghost" type="button" data-close aria-label="Schließen" title="Schließen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
+  </dialog>
 
   <!-- Konto -->
   <section id="me" style="display:none">
-    <aside class="card" id="initialNotice" role="status" hidden>
-      <strong>Du verwendest dein Startpasswort.</strong> Du kannst es hier ändern.
-      <div class="row"><button class="btn gold" id="changeInitial">Passwort ändern</button>
-      <button class="btn" id="laterInitial">Später</button></div>
-    </aside>
-    <div class="card row account-summary" style="justify-content:space-between">
-      <div>
-        <div class="account-name" id="meName">–</div>
-        <div class="balance-big" id="meBalance">0,00 €</div>
-      </div>
-      <button class="btn gold" id="btnActiveMeal">Aktivenessen anlegen</button>
-    </div>
-
+    <section class="account-summary" aria-label="Kontostand">
+      <div class="balance-head"><span>Kontostand</span><span id="meName" class="account-name"></span></div>
+      <strong class="balance-big" id="meBalance">–</strong>
+      <div class="balance-actions"><button class="btn" id="btnActiveMeal">Aktivenessen anlegen</button></div>
+    </section>
+    <details class="daygroup initial-password" id="initialNotice" hidden>
+      <summary>Du verwendest dein Startpasswort.</summary>
+      <div class="body row"><button class="btn gold" id="changeInitial">Passwort ändern</button>
+        <button class="btn" id="laterInitial">Später</button></div>
+    </details>
     <h2 class="section-title" id="accountViewTitle" hidden></h2>
     <details class="daygroup shop" id="shop"><summary><strong>Getränke kaufen</strong></summary>
       <div class="body"><div class="drink-grid" id="buyProducts"></div>
@@ -121,13 +124,7 @@
     <details class="daygroup" id="secProd" style="display:none">
       <summary><strong>Produkte &amp; Preise (BW)</strong><span class="muted">▾</span></summary>
       <div class="body">
-        <p class="muted" style="margin-top:8px">Preise ändern, Getränke anlegen, Bilder hochladen (neu oder bestehendes Foto ersetzen). „Strichliste“ = erscheint am Tablet (max. 5). <strong>Striche</strong> (20/10) und Reihenfolge (▲▼) steuern die Papier-Strichliste – „20er“ nach oben, damit alles auf eine A4-Seite passt.</p>
-        <div id="prodEdit"></div>
-        <input type="file" id="fileUp" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
-        <div class="row" style="margin-top:12px">
-          <button class="btn" id="btnAddProd">Produkt hinzufügen</button>
-          <button class="btn gold" id="btnSaveProd">Speichern</button>
-        </div>
+        <div id="productEditor"></div>
       </div>
     </details>
 
@@ -161,22 +158,22 @@
           <summary><strong>Aktivenessen verwalten</strong><span class="muted">▾</span></summary>
           <div class="body">
             <div class="card" style="margin-top:10px">
-              <label>XXX-Karte / Standard-Gegenkonto</label>
+              <h3>XXX-Karte / Standard-Gegenkonto</h3>
               <p class="muted" style="margin:5px 0 10px">GnuCash-Kontonummer oder vollständiger Kontopfad für Aktivenessen ohne persönlichen Ausleger.</p>
-              <div class="row">
-                <input id="xxxCardAccountUser" class="grow" placeholder="z. B. Aktiva:Umlaufvermögen:XXX-Karte">
-                </div>
-              <label for="mealSubsidyUser" style="margin-top:12px">Zuschuss pro Aktiv/K-Gast in €</label>
-              <input id="mealSubsidyUser" inputmode="decimal" style="max-width:160px"> <button class="btn gold" id="btnSaveXxxCardUser">Speichern</button>
-              <div class="muted" id="xxxCardInfoUser" style="margin-top:8px">Internes Konto wird geladen …</div>
+              <div class="gnu-extra-fields">
+              <label>Standard-Gegenkonto<input id="xxxCardAccountUser" placeholder="z. B. Aktiva:Umlaufvermögen:XXX-Karte"></label>
+              <label>Zuschuss pro Aktiv/K-Gast (€)<input id="mealSubsidyUser" inputmode="decimal"></label>
+              <button class="btn gold" id="btnSaveXxxCardUser">Speichern</button>
+            </div>
+            <div class="muted" id="xxxCardInfoUser" style="margin-top:8px">Internes Konto wird geladen …</div>
             </div>
             <div id="userManagedActiveMeals"></div>
           </div>
         </details>
 
         <details><summary>Manuelle Altliste (einmalige Übernahme)</summary><p class="muted">CSV mit <em>Name;Betrag</em> – jeder Betrag wird als Einzahlung gebucht.</p>
-        <div class="row">
-          <input type="file" id="impFile" accept=".csv,.txt" class="grow">
+        <div class="gnu-extra-fields">
+          <label>CSV-Datei<input type="file" id="impFile" accept=".csv,.txt"></label>
           <label class="row" style="margin:0; text-transform:none"><input type="checkbox" id="impCreate" style="width:auto; min-height:auto"> unbekannte Namen anlegen</label>
           <button class="btn gold" id="btnImport">Importieren</button>
         </div>
@@ -186,7 +183,7 @@
   </section>
 </main>
 
-<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="strichliste.html">Strichliste</a><a href="veranstaltung.html">Veranstaltungen</a><a href="admin.html">Verwaltung</a></nav>
+<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="strichliste.html" class="area-link" aria-label="Strichliste" title="Strichliste"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tally-5"></use></svg><span class="area-caption">Strichliste</span></a><a href="veranstaltung.html" class="area-link" aria-label="Veranstaltungen" title="Veranstaltungen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#calendar-days"></use></svg><span class="area-caption">Veranstaltungen</span></a><a href="admin.html"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#shield-check"></use></svg>Verwaltung</a></nav>
 
 <div class="toast" id="toast" role="status"></div>
 
@@ -194,7 +191,7 @@
 <script src="account-navigation.js"></script><script src="stock-counts.js"></script>
 <script src="/vendor/hyphen.js"></script><script src="/vendor/hyphen-de.js"></script>
 <script src="display.js"></script>
-<script src="ui.js"></script>
+<script src="ui.js"></script><script src="product-editor.js"></script>
 <script src="bar-types.js"></script><script src="bar-manager.js"></script>
 <script src="debt-mails.js"></script>
 <script src="accounting-actions.js"></script>
@@ -205,7 +202,7 @@
 <script src="active-meal-management.js"></script>
 <script src="audit-log.js"></script>
 <script>
-const eur = n => n.toFixed(2).replace(".", ",") + " €";
+const eur = BW.money;
 let products = [], sharedDrinks = [], me = null;
 let userMealManager = null;
 let userAuditLog = null;
@@ -213,6 +210,7 @@ let token = localStorage.getItem("kasse_token") || "";
 const authH = () => ({ "Authorization": "Bearer " + token, "Content-Type": "application/json" });
 
 const accountNavigation = mountAccountNavigation();
+const productEditor = mountProductEditor(document.getElementById("productEditor"), authH, saved => { products = saved; renderBuy(); });
 const stockPanel = document.getElementById("secStock");
 const stockCounts = mountStockCounts(document.getElementById("stockCounts"),authH);
 stockPanel.ontoggle = () => { if (stockPanel.open && !stockPanel.hidden) stockCounts.refresh(); };
@@ -264,6 +262,8 @@ let accountNames = [];
 async function showLogin() {
   me = null; order.clear();
   accountNavigation.reset();
+  productEditor.reset();
+  document.getElementById("initialNotice").open = false;
   stockPanel.open = false; stockPanel.hidden = true; stockCounts.reset();
   barPanel.hidden = true; barPanel.open = false; barManager.reset();
   mailPanel.hidden = true; mailPanel.open = false; debtMails.clear();
@@ -304,6 +304,7 @@ function renderSuggest() {
 nameInput.addEventListener("input", renderSuggest);
 nameInput.addEventListener("keydown", e => {
   if (e.key === "Enter") {
+    e.preventDefault();
     const first = suggestBox.querySelector("button");
     if (first) first.click(); else document.getElementById("loginPw").focus();
   }
@@ -312,22 +313,20 @@ document.addEventListener("click", e => {
   if (!e.target.closest("#suggest") && e.target !== nameInput) suggestBox.innerHTML = "";
 });
 
-document.getElementById("btnLogin").onclick = async () => {
-  const name = nameInput.value.trim();
-  const password = document.getElementById("loginPw").value;
-  const r = await fetch("/api/login", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, password })
-  });
-  const d = await r.json();
-  if (!r.ok) { document.getElementById("loginMsg").textContent = d.error; return; }
-  token = d.token; localStorage.setItem("kasse_token", token);
-  localStorage.setItem("kasse_lastname", d.account.name);
-  document.getElementById("loginPw").value = "";
-  document.getElementById("loginMsg").textContent = "";
-  loadMe();
+document.getElementById("memberLogin").onsubmit = async e => {
+  e.preventDefault();
+  const button = document.getElementById("btnLogin"), msg = document.getElementById("loginMsg");
+  if (button.disabled) return;
+  button.disabled = true; msg.textContent = "Konto wird geöffnet …";
+  try {
+    const input = document.getElementById("loginPw");
+    const d = await BW.post("/api/login",{name:nameInput.value.trim(),password:input.value});
+    token = d.token; localStorage.setItem("kasse_token",token);
+    localStorage.setItem("kasse_lastname",d.account.name);
+    input.value = ""; await loadMe(); msg.textContent = "";
+  } catch (error) { msg.textContent = error.message; }
+  finally { button.disabled = false; }
 };
-document.getElementById("loginPw").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("btnLogin").click(); });
 
 document.getElementById("btnLogout").onclick = async () => {
   await fetch("/api/logout", { method: "POST", headers: authH() }).catch(() => {});
@@ -356,7 +355,7 @@ async function loadMe() {
   document.getElementById("me").style.display = "";
   document.getElementById("btnLogout").style.display = "";
   document.getElementById("meName").textContent = me.name;
-  document.getElementById("meBalance").textContent = eur(me.balance);
+  document.getElementById("meBalance").innerHTML = eur(me.balance).replace(/\./g,".<wbr>");
   renderBuy();
   renderHistory(d.statement, d.activeMeals || []);
   applyRoles();
@@ -391,26 +390,19 @@ function renderHistory(statement, meals = []) {
   const renderEntry = row => {
     const meal = mealsById.get(row.mealId);
     const title = displayText(row.description || meal?.name || "Buchung");
-    const metadata = [formatDate(row.date), row.time, row.number && "Beleg " + row.number, row.source]
-      .filter(Boolean).map(displayText).join(" · ");
-    const caption = `<span><strong>${title}</strong><br><span class="muted">${metadata}</span></span>`;
-    const amountAndBalance = row.infoOnly ? "" : `<span class="right">
-      <strong class="${amountClass(row.amount)}">${amount(row.amount)}</strong>
-      ${row.balance === undefined ? "" : `<span class="muted booking-balance">Saldo ${amount(row.balance)}</span>`}
-    </span>`;
-    const details = `
-      ${row.counterAccounts.length ? `<div>Gegenkonto: ${row.counterAccounts.map(displayText).join(" · ")}</div>` : ""}
-      ${row.items?.length ? `<div class="muted">${row.items.map(item => displayText(item.qty + " × " + item.name + " à " + eur(item.price))).join(" · ")}</div>` : ""}
-      ${row.memo && row.memo !== row.description ? `<div class="muted">${displayText(row.memo)}</div>` : ""}`;
-    if (meal) return `
-      <details class="list-booking">
-        <summary>${caption}${amountAndBalance}</summary>
-        <div class="booking-details">${details}${renderMealDetails(meal)}</div>
-      </details>`;
-    return `<div class="list-item">
-      <div>${caption}${details}</div>
-      ${amountAndBalance}
-    </div>`;
+    const metadata = [row.time, row.number && "Beleg " + row.number, row.source].filter(Boolean).map(displayText).join(" · ");
+    const details = [
+      row.counterAccounts.length && "Gegenkonto: " + row.counterAccounts.map(displayText).join(" · "),
+      row.items?.length && row.items.map(item => displayText(item.qty + " × " + item.name + " à " + eur(item.price))).join(" · "),
+      row.memo && row.memo !== row.description && displayText(row.memo)
+    ].filter(Boolean).map(text => "<p>"+text+"</p>").join("");
+    const body = details + (meal ? renderMealDetails(meal) : "");
+    const content = `<span class="entry-copy"><time datetime="${row.date}">${formatDate(row.date)}</time><strong>${title}</strong></span>
+      ${row.infoOnly ? "" : `<span class="entry-money"><strong class="${amountClass(row.amount)}">${amount(row.amount)}</strong></span>`}
+      <span class="entry-meta">${metadata}</span>
+      ${row.balance === undefined || row.infoOnly ? "" : `<span class="entry-balance">Saldo ${amount(row.balance)}</span>`}`;
+    return body ? `<details class="statement-entry"><summary>${content}</summary><div class="booking-details">${body}</div></details>`
+      : `<div class="statement-entry"><div class="entry-line">${content}</div></div>`;
   };
   const groups = new Map();
   for (const row of entries) {
@@ -418,19 +410,32 @@ function renderHistory(statement, meals = []) {
     if (!groups.has(semester)) groups.set(semester, []);
     groups.get(semester).push(row);
   }
-  const current = semesterOf(new Date().toISOString());
-  const semesters = [...groups].map(([semester, rows]) => {
-    const received = rows.reduce((total, row) => total + Math.max(0, row.amount), 0);
-    const spent = rows.reduce((total, row) => total - Math.min(0, row.amount), 0);
-    return `<details class="daygroup semgroup" ${semester === current ? "open" : ""}>
-      <summary><strong>${semester}</strong><span>Erhalten ${eur(received / 100)} · Ausgegeben ${eur(spent / 100)}</span></summary>
-      <div class="body">${rows.map(renderEntry).join("")}</div>
-    </details>`;
+  const pageSize = 25;
+  const sections = [...groups];
+  function page(rows, index, start=0) {
+    const end = start + pageSize;
+    return rows.slice(start,end).map(renderEntry).join("") + (end < rows.length
+      ? `<button class="btn more-entries" data-list="${index}" data-offset="${end}">Weitere Buchungen anzeigen</button>` : "");
+  }
+  const semesters = sections.map(([semester,rows],index) => {
+    const received = rows.reduce((total,row) => total + Math.max(0,row.amount),0);
+    const spent = rows.reduce((total,row) => total - Math.min(0,row.amount),0);
+    return `<details class="daygroup semgroup" ${index === 0 ? "open" : ""}>
+      <summary><strong>${semester}</strong><span><span>Erhalten ${eur(received/100)}</span> · <span>Ausgegeben ${eur(spent/100)}</span></span></summary>
+      <div class="body">${page(rows,index)}</div></details>`;
   }).join("");
   history.innerHTML = (date ? `<p class="muted">GnuCash-Stand vom ${formatDate(date)}</p>` : "")
-    + (semesters || '<div class="card muted">Noch keine Buchungen.</div>')
-    + (localDetails.length ? `<details class="daygroup"><summary>BW-Einzelposten zu bereits übernommenen Buchungen</summary>
-      <div class="body"><p class="muted">Die Beträge sind oben bereits im Kontoauszug enthalten.</p>${localDetails.map(renderEntry).join("")}</div></details>` : "");
+    + (semesters || '<div class="card empty-state">Noch keine Buchungen.</div>')
+    + (localDetails.length ? `<details class="daygroup"><summary>BW-Einzelposten zu bereits übernommenen Buchungen</summary><div class="body"><p>Die Beträge sind oben bereits im Kontoauszug enthalten.</p>${page(localDetails,-1)}</div></details>` : "");
+  history.onclick = e => {
+    const button = e.target.closest("button[data-offset]");
+    if (!button) return;
+    const index = Number(button.dataset.list);
+    button.insertAdjacentHTML("beforebegin",page(index === -1 ? localDetails : sections[index][1],index,Number(button.dataset.offset)));
+    const first = button.parentElement.children[Number(button.dataset.offset) + (index === -1 ? 1 : 0)];
+    button.remove();
+    if (first) { const target = first.querySelector("summary") || first; target.tabIndex = -1; target.focus({preventScroll:true}); }
+  };
 }
 
 /* Passwort ändern */
@@ -481,7 +486,7 @@ function applyRoles() {
   document.getElementById("secProd").style.display = roles.uebersicht ? "" : "none";
   document.getElementById("secAudit").style.display = roles.gnucash ? "" : "none";
   document.getElementById("secGnu").style.display = roles.gnucash ? "" : "none";
-  if (roles.uebersicht) { loadRoleDash(); editProducts = products.map(p => ({ ...p })); renderProdEdit(); }
+  if (roles.uebersicht) { loadRoleDash(); productEditor.load(products); }
   if (roles.gnucash && userMealManager) userMealManager.refresh();
   if (roles.gnucash && userAuditLog) userAuditLog.refresh();
   if (roles.gnucash) {
@@ -489,107 +494,6 @@ function applyRoles() {
     else gnuWorkbench.refresh();
   }
 }
-
-/* --- BW: Produkte & Preise --- */
-let editProducts = [], uploadTarget = null;
-function collectProdEdit() {
-  document.querySelectorAll("#prodEdit [data-k]").forEach(inp => {
-    const p = editProducts[Number(inp.dataset.i)];
-    if (!p) return;
-    if (inp.type === "checkbox") p[inp.dataset.k] = inp.checked;
-    else if (inp.dataset.k === "ticks") p.ticks = Number(inp.value);
-    else p[inp.dataset.k] = inp.value;
-  });
-}
-function renderProdEdit() {
-  const el = document.getElementById("prodEdit");
-  el.innerHTML = editProducts.map((p, i) => `
-    <div class="prodrow" data-row="${i}">
-      <div style="display:flex; flex-direction:column; gap:3px; align-items:center">
-        <span class="grip" draggable="true" title="Ziehen zum Sortieren">⠿</span>
-        <button class="btn small" data-mv="up" data-i="${i}" ${i === 0 ? "disabled" : ""}>▲</button>
-        <button class="btn small" data-mv="down" data-i="${i}" ${i === editProducts.length - 1 ? "disabled" : ""}>▼</button>
-      </div>
-      <img class="prodthumb" src="/assets/res/${displayText(p.image)}" alt="">
-      <div class="grow">
-        <div class="row" style="margin-bottom:6px">
-          <input data-i="${i}" data-k="name" value="${displayText(p.name)}" placeholder="Name" class="grow">
-          <input data-i="${i}" data-k="price" value="${typeof p.price === "number" ? p.price.toFixed(2).replace(".", ",") : p.price}" placeholder="Preis" style="max-width:90px">
-        </div>
-        <div class="row">
-          <input data-i="${i}" data-k="image" value="${displayText(p.image)}" placeholder="Bilddatei" class="grow">
-          <button class="btn small" data-upl="${i}">Bild hochladen</button>
-          <label class="row" style="margin:0; text-transform:none; font-size:.85rem"><input type="checkbox" data-i="${i}" data-k="tally" ${p.tally ? "checked" : ""} style="width:auto; min-height:auto"> Strichliste</label>
-          <label class="row" style="margin:0; text-transform:none; font-size:.85rem">Striche
-            <select data-i="${i}" data-k="ticks" style="min-height:38px; max-width:72px"><option value="20"${p.ticks !== 10 ? " selected" : ""}>20</option><option value="10"${p.ticks === 10 ? " selected" : ""}>10</option></select></label>
-          <button class="btn small" data-del="${i}">Entfernen</button>
-        </div>
-      </div>
-    </div>`).join("");
-  el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { collectProdEdit(); editProducts.splice(Number(b.dataset.del), 1); renderProdEdit(); });
-  el.querySelectorAll("[data-upl]").forEach(b => b.onclick = () => { collectProdEdit(); uploadTarget = Number(b.dataset.upl); document.getElementById("fileUp").click(); });
-  el.querySelectorAll("[data-mv]").forEach(b => b.onclick = () => {
-    collectProdEdit();
-    const i = Number(b.dataset.i), j = b.dataset.mv === "up" ? i - 1 : i + 1;
-    if (j < 0 || j >= editProducts.length) return;
-    [editProducts[i], editProducts[j]] = [editProducts[j], editProducts[i]];
-    renderProdEdit();
-  });
-  enableProdDnd();
-}
-
-/* Drag & Drop (Desktop) für die BW-Produktliste */
-let dragFromBw = null;
-function enableProdDnd() {
-  const rows = document.querySelectorAll("#prodEdit .prodrow");
-  rows.forEach((row, idx) => {
-    const grip = row.querySelector(".grip");
-    if (grip) {
-      grip.addEventListener("dragstart", e => { collectProdEdit(); dragFromBw = idx; row.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
-      grip.addEventListener("dragend", () => { dragFromBw = null; rows.forEach(r => r.classList.remove("dragging", "over")); });
-    }
-    row.addEventListener("dragover", e => { if (dragFromBw !== null) { e.preventDefault(); row.classList.add("over"); } });
-    row.addEventListener("dragleave", () => row.classList.remove("over"));
-    row.addEventListener("drop", e => {
-      e.preventDefault();
-      row.classList.remove("over");
-      if (dragFromBw === null || dragFromBw === idx) return;
-      const [m] = editProducts.splice(dragFromBw, 1);
-      editProducts.splice(idx, 0, m);
-      dragFromBw = null;
-      renderProdEdit();
-    });
-  });
-}
-document.getElementById("fileUp").onchange = async e => {
-  const file = e.target.files[0];
-  e.target.value = "";
-  if (!file || uploadTarget === null) return;
-  const safe = file.name.replace(/[^\w.\-äöüÄÖÜß]/g, "_");
-  const r = await fetch(`/api/admin/upload?name=${encodeURIComponent(safe)}`, {
-    method: "POST",
-    headers: { "Authorization": "Bearer " + token, "Content-Type": "application/octet-stream" },
-    body: file
-  });
-  const d = await r.json();
-  if (!r.ok) return toast(d.error);
-  collectProdEdit();
-  editProducts[uploadTarget].image = d.file;
-  renderProdEdit();
-  toast(`Bild ${d.file} hochgeladen ✓ – noch „Speichern“ klicken`);
-};
-document.getElementById("btnAddProd").onclick = () => { collectProdEdit(); editProducts.push({ name: "", price: 0, image: "", tally: false, ticks: 20 }); renderProdEdit(); };
-document.getElementById("btnSaveProd").onclick = async () => {
-  collectProdEdit();
-  const r = await fetch("/api/admin/products", { method: "PUT", headers: authH(), body: JSON.stringify({ products: editProducts }) });
-  const d = await r.json();
-  if (!r.ok) return toast(d.error);
-  products = d.products;
-  editProducts = products.map(p => ({ ...p }));
-  renderProdEdit();
-  renderBuy();
-  toast("Gespeichert ✓ (products.csv)");
-};
 
 /* --- BW: Übersicht --- */
 async function loadRoleDash() {
@@ -630,35 +534,11 @@ function renderRoleDash() {
       };
       body.appendChild(del);
     }
-    if (!tx.length) body.insertAdjacentHTML("beforeend", '<span class="muted">Keine Buchungen.</span>');
-    else {
-      const bySem = {};
-      tx.forEach(t => { const s = semesterOf(t.date); (bySem[s] = bySem[s] || []).push(t); });
-      const curSem = semesterOf(new Date().toISOString());
-      Object.entries(bySem).forEach(([sem, stx]) => {
-        const semSum = stx.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
-        const semDet = document.createElement("details");
-        semDet.className = "daygroup semgroup";
-        if (sem === curSem) semDet.open = true;
-        semDet.innerHTML = `<summary><span>${sem}</span>
-          <span class="${semSum >= 0 ? "amount-pos" : "amount-neg"}">${semSum >= 0 ? "+" : "−"}${eur(Math.abs(semSum))}</span></summary>
-          <div class="body"></div>`;
-        const semBody = semDet.querySelector(".body");
-        body.appendChild(semDet);
-        const byDay = {};
-        stx.forEach(t => { const d = t.date.slice(0, 10); (byDay[d] = byDay[d] || []).push(t); });
-        Object.entries(byDay).forEach(([day, list]) => {
-          const sum = list.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
-          semBody.insertAdjacentHTML("beforeend", `
-            <div class="list-item"><strong class="gold-text">${new Date(day).toLocaleDateString("de-DE")}</strong>
-              <span class="${sum >= 0 ? "amount-pos" : "amount-neg"}">${sum >= 0 ? "+" : "−"}${eur(Math.abs(sum))}</span></div>
-            ${list.map(t => `<div class="list-item" style="padding-left:14px">
-              <span>${displayText(t.description)} <span class="muted" style="font-size:.8rem">${t.date.slice(11, 16)} Uhr</span></span>
-              ${transactionAmount(t,eur)}
-            </div>`).join("")}`);
-        });
-      });
-    }
+    det.addEventListener("toggle",function populate(){
+      if (!det.open) return;
+      appendAccountHistory(body,tx,eur);
+      det.removeEventListener("toggle",populate);
+    });
     el.appendChild(det);
   });
   if (!el.children.length) el.innerHTML = '<span class="muted">Kein Konto gefunden.</span>';

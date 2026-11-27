@@ -1,23 +1,22 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="theme-color" content="#14120d"><script src="theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Verwaltung – Getränkekasse</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="admin-page">
-<header class="app">
-  <h1>Verwaltung</h1>
+<header class="app"><a class="tally-home" href="strichliste.html" aria-label="Zurück zur Strichliste" title="Zurück zur Strichliste"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tally-5"></use></svg></a>
   <div class="row">
     <span class="sub" id="status"></span>
-    <button class="btn small" id="btnAdminLogout" style="display:none">Abmelden</button>
+    <button class="icon-action logout-action" id="btnAdminLogout" type="button" style="display:none" aria-label="Abmelden" title="Abmelden"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#log-out"></use></svg></button>
   </div>
 </header>
 
-<main>
+<main><h1 class="page-title">Verwaltung</h1>
   <!-- PIN -->
-  <section id="login" class="card" style="max-width:420px; margin:40px auto">
+  <form id="login" class="card" style="max-width:420px; margin:40px auto">
     <h2>Verwaltung anmelden</h2>
     <label for="pin">Admin-PIN</label>
     <div class="row">
@@ -26,42 +25,44 @@
     </div>
     <div class="muted" role="status" id="loginMsg" style="margin-top:8px"></div>
     <p class="muted" style="margin-bottom:0">Berechtigte Mitglieder finden ihre Bereiche auf der Seite „Mein Konto“.</p>
-  </section>
+  </form>
 
   <section id="panel" style="display:none">
+    <label class="compact-admin-nav" for="adminSection">Verwaltungsbereich<span class="section-picker"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#layout-dashboard"></use></svg><select id="adminSection"></select></span></label>
     <nav class="tabs" aria-label="Verwaltungsbereiche">
-      <button class="btn" data-tab="dash" aria-current="page">Übersicht</button>
-      <button class="btn" data-tab="accounts">Konten</button>
-      <button class="btn" data-tab="events">Veranstaltungen</button>
-      <button class="btn" data-tab="products">Produkte &amp; Preise</button>
-      <button class="btn" data-tab="bar">Getränkekarten (SW)</button>
-      <button class="btn" data-tab="stock">Auszählungen</button>
-      <button class="btn" data-tab="audit">Änderungsprotokoll</button>
-      <button class="btn" data-tab="gnucash">GnuCash Import / Export</button>
-      <button class="btn" data-tab="updates">Software-Updates</button>
+      <button class="btn" data-tab="dash" aria-current="page"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#layout-dashboard"></use></svg><span class="nav-label">Übersicht</span></button>
+      <button class="btn" data-tab="accounts"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#users-round"></use></svg><span class="nav-label">Konten</span></button>
+      <button class="btn" data-tab="events"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#calendar-days"></use></svg><span class="nav-label">Veranstaltungen</span></button>
+      <button class="btn" data-tab="products"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tags"></use></svg><span class="nav-label">Produkte &amp; Preise</span></button>
+      <button class="btn" data-tab="bar"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#martini"></use></svg><span class="nav-label">Getränkekarten (SW)</span></button>
+      <button class="btn" data-tab="stock"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#clipboard-list"></use></svg><span class="nav-label">Auszählungen</span></button>
+      <button class="btn" data-tab="audit"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#scroll-text"></use></svg><span class="nav-label">Änderungsprotokoll</span></button>
+      <button class="btn" data-tab="gnucash"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#book-open"></use></svg><span class="nav-label">GnuCash Import / Export</span></button>
+      <button class="btn" data-tab="updates"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#download"></use></svg><span class="nav-label">Software-Updates</span></button>
     </nav>
 
+    <div class="admin-content"><div class="workspace-head"><h2 class="workspace-title" id="workspaceTitle">Übersicht</h2><button class="btn gold icon-action" id="openAccount" hidden type="button" aria-label="Konto anlegen" title="Konto anlegen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#user-round-plus"></use></svg></button></div>
     <div id="tab-stock" style="display:none"></div>
     <!-- Übersicht: Käufe je Konto, gruppiert nach Datum -->
     <div id="tab-dash">
       <div class="row" style="margin-bottom:12px">
-        <input id="dashSearch" class="grow" type="search" placeholder="Name oder Kontonummer …">
-        <button class="btn" id="btnNegPdf">Negativ-Liste drucken (PDF)</button>
-        <button class="btn" id="btnBackupTally">Papier-Strichliste (ODS)</button>
+        <input id="dashSearch" aria-label="Konten durchsuchen" class="grow" type="search" placeholder="Name oder Kontonummer …">
+        <button class="btn" id="btnNegPdf">Schuldenliste (PDF)</button>
+        <button class="btn" id="btnBackupTally">Strichliste (ODS)</button>
       </div>
-      <div id="dash"></div>
+      <div class="dash-layout"><div id="dash"><p role="status">Konten werden geladen …</p></div><section id="dashDetail" class="card" aria-label="Buchungsverlauf des gewählten Kontos" hidden></section></div>
     </div>
 
     <!-- Konten -->
     <div id="tab-accounts" style="display:none">
-      <div class="card">
-        <h3>Konto anlegen</h3>
-        <form class="row admin-account-form">
-          <label class="grow">Name<input id="newName" name="name" maxlength="120" required></label>
-          <label class="grow">Nachname (Startpasswort)<input id="newSurname" name="surname" maxlength="120" required></label>
+      <dialog class="bw-dialog compact-dialog" id="createAccount" aria-labelledby="createTitle">
+        <div class="dialog-head"><h2 id="createTitle">Konto anlegen</h2><button class="btn small ghost" type="button" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
+        <form class="stack-form admin-account-form">
+          <label>Name auf der Strichliste<input id="newName" name="name" placeholder="z. B. Muster, Max" maxlength="120" required autocomplete="off"></label>
+          <label>Nachname (Startpasswort)<input id="newSurname" name="surname" placeholder="z. B. Muster" maxlength="120" required autocomplete="off"></label>
           <button class="btn gold" type="submit" id="btnCreate">Konto anlegen</button>
         </form>
-      </div>
+      </dialog>
       <div class="card">
         <label>Guthaben manuell buchen (Einzahlung, negativ = Korrektur)</label>
         <div class="row">
@@ -71,7 +72,7 @@
         </div>
       </div>
       <div class="card">
-        <div style="overflow-x:auto">
+        <div class="table-scroll" role="region" tabindex="0" aria-label="Konten und Rollen">
           <table>
             <thead><tr><th scope="col" aria-sort="ascending">Kontonummer</th><th>Name</th><th class="right">Guthaben</th><th>Passwort</th><th title="In der Gruppe „Priorisierte Konten“ anzeigen">Priorität ★</th><th title="Zugriff auf GnuCash Import/Export">XXX</th><th title="Sieht die Übersicht">BW</th><th title="Schnapswart">SW</th><th title="Kneipwart">KW</th><th></th></tr></thead>
             <tbody id="accTable"></tbody>
@@ -99,7 +100,7 @@
         </div>
       </div>
       <div class="card">
-        <div style="overflow-x:auto">
+        <div class="table-scroll" role="region" tabindex="0" aria-label="Veranstaltungskonten">
           <table>
             <thead><tr><th>Veranstaltung</th><th>Angelegt</th><th>Art</th><th class="right">BW-Getränkeposten gesamt</th><th class="right">Offen in BW</th><th class="right">GnuCash-Saldo</th><th></th></tr></thead>
             <tbody id="evTable"></tbody>
@@ -112,16 +113,7 @@
     <!-- Produkte -->
     <div id="tab-products" style="display:none">
       <div class="card">
-        <p class="muted" style="margin-top:0">Die Liste wird in <code>assets/res/products.csv</code> gespeichert und kann dort auch direkt bearbeitet werden. Bilder liegen in <code>assets/res/</code>. „Strichliste“ = erscheint auf der Tablet-Strichliste (max. 5 sinnvoll). <strong>Striche</strong> (20/10) und die <strong>Reihenfolge</strong> (▲▼) bestimmen die Papier-Strichliste: Getränke mit 20 bekommen einen breiten Block, mit 10 einen schmalen – am besten die „20er“ nach oben sortieren, damit die Liste auf eine A4-Seite passt.</p>
-        <div class="table-scroll"><table>
-          <thead><tr><th></th><th></th><th></th><th>Name</th><th>Preis (€)</th><th>Bilddatei</th><th></th><th>Strichliste</th><th title="Felder auf der Papier-Strichliste">Striche</th><th></th></tr></thead>
-          <tbody id="prodTable"></tbody>
-        </table></div>
-        <input type="file" id="fileUp" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
-        <div class="row" style="margin-top:12px">
-          <button class="btn" id="btnAddProd">Produkt hinzufügen</button>
-          <button class="btn gold" id="btnSaveProd">Speichern</button>
-        </div>
+        <div id="productEditor"></div>
       </div>
     </div>
 
@@ -147,11 +139,11 @@
           <div class="card">
             <h3 style="margin-top:0" class="gold-text">XXX-Karte / Standard-Gegenkonto</h3>
             <p class="muted">Wird beim Anlegen kein persönlicher Ausleger gewählt, läuft die Buchung auf die XXX-Karte. Hier die GnuCash-Kontonummer oder den vollständigen Kontopfad eintragen.</p>
-            <div class="row">
-              <input id="xxxCardAccountAdmin" class="grow" placeholder="z. B. Aktiva:Umlaufvermögen:XXX-Karte">
+            <div class="gnu-extra-fields">
+              <label>Standard-Gegenkonto<input id="xxxCardAccountAdmin" placeholder="z. B. Aktiva:Umlaufvermögen:XXX-Karte"></label>
+              <label>Zuschuss pro Aktiv/K-Gast (€)<input id="mealSubsidyAdmin" inputmode="decimal"></label>
+              <button class="btn gold" id="btnSaveXxxCardAdmin">Speichern</button>
             </div>
-            <label for="mealSubsidyAdmin" style="margin-top:12px">Zuschuss pro Aktiv/K-Gast in €</label>
-            <input id="mealSubsidyAdmin" inputmode="decimal" style="max-width:160px"> <button class="btn gold" id="btnSaveXxxCardAdmin">Speichern</button>
             <div class="muted" id="xxxCardInfoAdmin" style="margin-top:8px">Internes Konto wird geladen …</div>
           </div>
           <div class="row" style="justify-content:space-between; margin:18px 0 10px">
@@ -164,8 +156,8 @@
       <div class="card">
         <details><summary>Manuelle Altliste (Name und Betrag)</summary>
         <p class="muted">CSV-Datei mit einer Zeile pro Mitglied: <em>Name;Betrag</em> (Betrag = Einzahlung, Komma oder Punkt). Nur als einmalige Übernahme verwenden. Für GnuCash-Exporte die Vorschau oben nutzen.</p>
-        <div class="row">
-          <input type="file" id="impFile" accept=".csv,.txt" class="grow">
+        <div class="gnu-extra-fields">
+          <label>CSV-Datei<input type="file" id="impFile" accept=".csv,.txt"></label>
           <label class="row" style="margin:0; text-transform:none"><input type="checkbox" id="impCreate" style="width:auto; min-height:auto"> unbekannte Namen anlegen</label>
           <button class="btn gold" id="btnImport">Importieren</button>
         </div>
@@ -182,33 +174,34 @@
         <h3>Update-Quelle</h3>
         <form id="updateSource">
           <label for="updateRepo">HTTPS-Adresse des Git-Repositories</label>
-          <div class="row">
+          <div class="row update-actions">
             <input class="grow" id="updateRepo" type="url" required disabled>
-            <button class="btn" id="updateSave" disabled>Speichern</button>
-            <button class="btn gold" type="button" id="updateCheck" disabled>Nach Updates suchen</button>
+            <button class="btn" id="updateSave" aria-label="Update-Quelle speichern" title="Update-Quelle speichern" disabled><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#save"></use></svg></button>
+            <button class="btn gold" type="button" id="updateCheck" aria-label="Nach Updates suchen" title="Nach Updates suchen" disabled><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#refresh-cw"></use></svg></button>
           </div>
         </form>
       </div>
       <div class="card">
         <h3>Version wählen</h3>
         <label for="updateVersions">Veröffentlichte und lokal vorhandene Versionen</label>
-        <div class="row">
+        <div class="row update-actions">
           <select class="grow" id="updateVersions" aria-describedby="updateDetail" disabled></select>
-          <button class="btn gold" id="updateInstall" disabled>Ausgewählte Version aktivieren</button>
+          <button class="btn gold" id="updateInstall" aria-label="Ausgewählte Version aktivieren" title="Ausgewählte Version aktivieren" disabled><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#download"></use></svg></button>
         </div>
         <div class="muted" id="updateDetail"></div>
       </div>
       <p class="muted" role="status" id="updateMessage"></p>
     </div>
+    </div>
   </section>
 </main>
 
-<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="strichliste.html">Strichliste</a><a href="veranstaltung.html">Veranstaltungen</a><a href="user.html">Mein Konto</a></nav>
+<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="strichliste.html" class="area-link" aria-label="Strichliste" title="Strichliste"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tally-5"></use></svg><span class="area-caption">Strichliste</span></a><a href="veranstaltung.html" class="area-link" aria-label="Veranstaltungen" title="Veranstaltungen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#calendar-days"></use></svg><span class="area-caption">Veranstaltungen</span></a><a href="user.html"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#wallet"></use></svg>Mein Konto</a></nav>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/vendor/hyphen.js"></script><script src="/vendor/hyphen-de.js"></script>
 <script src="display.js"></script>
-<script src="ui.js"></script>
+<script src="ui.js"></script><script src="product-editor.js"></script>
 <script src="bar-types.js"></script><script src="bar-manager.js"></script>
 <script src="accounting-actions.js"></script>
 <script src="active-meal-management.js"></script>
@@ -217,18 +210,18 @@
 <script src="software-updates.js"></script>
 <script src="gnucash-workbench.js"></script>
 <script>
-const eur = n => n.toFixed(2).replace(".", ",") + " €";
+const eur = BW.money;
 let pin = sessionStorage.getItem("kasse_pin") || "";
 const H = () => ({ "X-Admin-Pin": pin, "Content-Type": "application/json" });
 
 const barManager = mountBarManager(document.getElementById("tab-bar"),H);
 const updates = mountSoftwareUpdates(H);
+const productEditor = mountProductEditor(document.getElementById("productEditor"), H);
 const stockCounts = mountStockCounts(document.getElementById("tab-stock"),H);
 
 /* Login */
 async function tryLogin(p) {
-  const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin: p }) });
-  if (!r.ok) return false;
+  await BW.post("/api/admin/login",{pin:p});
   pin = p; sessionStorage.setItem("kasse_pin", p);
   document.getElementById("login").style.display = "none";
   document.getElementById("panel").style.display = "";
@@ -242,20 +235,34 @@ document.getElementById("btnAdminLogout").onclick = () => {
   sessionStorage.removeItem("kasse_pin");
   location.reload();
 };
-document.getElementById("btnLogin").onclick = async () => {
-  if (!await tryLogin(document.getElementById("pin").value))
-    document.getElementById("loginMsg").textContent = "Falsche PIN.";
+const loginMessage = document.getElementById("loginMsg");
+document.getElementById("login").onsubmit = async e => {
+  e.preventDefault();
+  const button = document.getElementById("btnLogin");
+  if (button.disabled) return;
+  button.disabled=true; loginMessage.textContent="Verwaltung wird geöffnet …";
+  try { await tryLogin(document.getElementById("pin").value); loginMessage.textContent=""; }
+  catch (error) { loginMessage.textContent=error.message; }
+  finally { button.disabled=false; }
 };
-document.getElementById("pin").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("btnLogin").click(); });
-if (pin) tryLogin(pin);
+if (pin) tryLogin(pin).catch(error=>{loginMessage.textContent=error.message;});
 
 /* Tabs */
-document.querySelectorAll(".tabs [data-tab]").forEach(b => b.onclick = () => {
+const sectionSelect = document.getElementById("adminSection");
+const sectionButtons = [...document.querySelectorAll(".tabs [data-tab]")];
+sectionSelect.append(...sectionButtons.map(b => new Option(b.textContent,b.dataset.tab)));
+sectionSelect.onchange = () => sectionButtons.find(b => b.dataset.tab === sectionSelect.value).click();
+sectionButtons.forEach(b => b.onclick = () => {
   document.querySelectorAll(".tabs [data-tab]").forEach(x => x.removeAttribute("aria-current"));
   b.setAttribute("aria-current", "page");
+  sectionSelect.value = b.dataset.tab;
+  document.getElementById("openAccount").hidden = b.dataset.tab !== "accounts";
+  const picker = sectionSelect.parentElement;
+  picker.replaceChild(b.querySelector(".nav-icon").cloneNode(true), picker.querySelector(".nav-icon"));
+  document.getElementById("workspaceTitle").textContent = b.textContent;
   if (b.dataset.tab === "stock") stockCounts.refresh();
   if (b.dataset.tab === "bar") barManager.refresh();
-  document.querySelectorAll("#panel > [id^='tab-']").forEach(panel =>
+  document.querySelectorAll(".admin-content > [id^='tab-']").forEach(panel =>
     panel.style.display = panel.id === "tab-" + b.dataset.tab ? "" : "none");
   updates.setVisible(b.dataset.tab === "updates");
 });
@@ -270,65 +277,66 @@ async function refreshAll() {
     fetch("/api/products").then(r => r.json()),
     fetch("/api/eventkinds").then(r => r.json())
   ]);
-  renderDash(); renderAccounts(); renderEvents(); renderProducts();
+  renderDash(); renderAccounts(); renderEvents(); productEditor.load(products);
   if (gnuWorkbench) gnuWorkbench.refresh();
   else gnuWorkbench = mountGnucashWorkbench(document.getElementById("gnuWorkbench"),H,toast,refreshAll);
   if (adminMealManager) adminMealManager.refresh();
   if (adminAuditLog) adminAuditLog.refresh();
 }
 
-/* Übersicht: je Konto -> aufklappen -> je Datum -> Buchungen */
+const wideOverview = matchMedia("(min-width:1200px)");
+let selectedAccountId = null;
+wideOverview.addEventListener("change",()=>{ if (pin) renderDash(); });
+
 function renderDash() {
-  const q = (document.getElementById("dashSearch").value || "").toLowerCase();
-  const el = document.getElementById("dash");
-  el.innerHTML = "";
-  const byAcc = {};
-  transactions.forEach(t => (byAcc[t.accountId] = byAcc[t.accountId] || []).push(t));
-  accounts.filter(a => a.name.toLowerCase().includes(q) || a.accountNumber.toLowerCase().includes(q)).sort(compareAccounts).forEach(a => {
-    const tx = byAcc[a.id] || [];
-    const det = document.createElement("details");
-    det.className = "daygroup";
-    const spent = tx.filter(t => t.type === "purchase").reduce((s, t) => s + t.total, 0);
-    const eventSummary = eventBalanceLabel(a, eur);
-    det.innerHTML = `<summary><strong>${a.accountNumber ? displayText(a.accountNumber) + " · " : ""}${displayText(a.name)}${a.mode === "collective" ? " · Sammelkonto" : a.mode === "hidden" ? " · Buchhaltung" : a.isEvent ? " · Veranstaltung" : ""}</strong>
-      <span>${eventSummary || `<span class="muted">Käufe ${eur(spent)} · </span>Guthaben
-        <span class="${a.balance >= 0 ? "amount-pos" : "amount-neg"}">${eur(a.balance)}</span>`}</span></summary>
-      <div class="body" id="b-${a.id}"></div>`;
-    el.appendChild(det);
-    const body = det.querySelector(".body");
-    if (!tx.length) { body.innerHTML = '<span class="muted">Keine Buchungen.</span>'; return; }
-    const bySem = {};
-    tx.forEach(t => { const s = semesterOf(t.date); (bySem[s] = bySem[s] || []).push(t); });
-    const curSem = semesterOf(new Date().toISOString());
-    Object.entries(bySem).forEach(([sem, stx]) => {
-      const semSum = stx.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
-      const semDet = document.createElement("details");
-      semDet.className = "daygroup semgroup";
-      if (sem === curSem) semDet.open = true;
-      semDet.innerHTML = `<summary><span>${sem}</span>
-        <span class="${semSum >= 0 ? "amount-pos" : "amount-neg"}">${semSum >= 0 ? "+" : "−"}${eur(Math.abs(semSum))}</span></summary>
-        <div class="body"></div>`;
-      const semBody = semDet.querySelector(".body");
-      body.appendChild(semDet);
-      const byDay = {};
-      stx.forEach(t => { const d = t.date.slice(0, 10); (byDay[d] = byDay[d] || []).push(t); });
-      Object.entries(byDay).forEach(([day, list]) => {
-        const sum = list.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
-        semBody.insertAdjacentHTML("beforeend", `
-          <div class="list-item"><strong class="gold-text">${new Date(day).toLocaleDateString("de-DE")}</strong>
-            <span class="${sum >= 0 ? "amount-pos" : "amount-neg"}">${sum >= 0 ? "+" : "−"}${eur(Math.abs(sum))}</span></div>
-          ${list.map(t => `<div class="list-item" style="padding-left:18px">
-            <span>${displayText(t.description)} <span class="muted">${t.date.slice(11, 16)} Uhr${t.exported ? " · exportiert" : ""}</span></span>
-            ${transactionAmount(t,eur)}
-          </div>`).join("")}`);
+  const q = document.getElementById("dashSearch").value.toLowerCase();
+  const list = document.getElementById("dash"), pane = document.getElementById("dashDetail");
+  list.replaceChildren(); pane.replaceChildren(); pane.hidden = true;
+  const byAccount = new Map();
+  for (const t of transactions) {
+    if (!byAccount.has(t.accountId)) byAccount.set(t.accountId,[]);
+    byAccount.get(t.accountId).push(t);
+  }
+  const visible = accounts.filter(a=>a.name.toLowerCase().includes(q) || a.accountNumber.toLowerCase().includes(q)).sort(compareAccounts);
+  if (!visible.length) { list.textContent = "Kein Konto gefunden."; return; }
+  function select(button,a,tx) {
+    selectedAccountId = a.id;
+    const previous = list.querySelector("[aria-current]");
+    if (previous) previous.removeAttribute("aria-current");
+    button.setAttribute("aria-current","true");
+    pane.hidden = false;
+    const title = document.createElement("h3");
+    title.textContent = a.name;
+    pane.replaceChildren(title);
+    appendAccountHistory(pane,tx,eur);
+  }
+  const defaultAccount = visible.find(a=>a.id===selectedAccountId) || visible[0];
+  for (const a of visible) {
+    const tx = byAccount.get(a.id) || [];
+    const spent = tx.filter(t=>t.type==="purchase").reduce((sum,t)=>sum+t.total,0);
+    const kind = a.mode==="collective" ? "Sammelkonto" : a.mode==="hidden" ? "Buchhaltung" : a.isEvent ? "Veranstaltung" : "";
+    const heading = `<strong>${displayText(a.accountNumber ? a.accountNumber+" · "+a.name : a.name)}</strong>
+      <span class="account-kind">${displayText(kind)}</span>`;
+    const totals = eventBalanceLabel(a,eur) || `Käufe ${eur(spent)} · Guthaben <b class="${a.balance < 0 ? "amount-neg" : "amount-pos"}">${eur(a.balance)}</b>`;
+    if (wideOverview.matches) {
+      const button = document.createElement("button");
+      button.type="button"; button.className="dash-choice"; button.setAttribute("aria-controls","dashDetail");
+      button.innerHTML=heading+`<span class="dash-totals">${totals}</span>`;
+      button.onclick=()=>select(button,a,tx);
+      list.append(button);
+      if (a===defaultAccount) select(button,a,tx);
+    } else {
+      const det = document.createElement("details"); det.className="daygroup";
+      det.innerHTML=`<summary><span>${heading}</span><span class="dash-totals">${totals}</span></summary><div class="body"></div>`;
+      det.addEventListener("toggle",function populate(){
+        if (!det.open) return;
+        appendAccountHistory(det.lastElementChild,tx,eur);
+        det.removeEventListener("toggle",populate);
       });
-    });
-  });
-  if (!el.children.length) el.textContent = "Kein Konto gefunden.";
+      list.append(det);
+    }
+  }
 }
-
-/* Semester: Sommersemester Mär–Aug, Wintersemester Sep–Feb */
-
 document.getElementById("dashSearch").oninput = renderDash;
 
 /* Konten */
@@ -338,12 +346,8 @@ function renderAccounts() {
     `<tr><td>${displayText(a.accountNumber) || "–"}</td><td>${displayText(a.name)}${a.isSystem ? ' <span class="muted">· internes Systemkonto</span>' : ""}</td>
      <td class="right ${a.balance >= 0 ? "amount-pos" : "amount-neg"}">${eur(a.balance)}</td>
      <td class="muted">${a.isSystem ? "Systemkonto" : (a.initialPassword ? "Startpasswort" : a.hasPassword ? "persönlich" : "noch keins")}</td>
-     <td style="text-align:center"><input type="checkbox" ${a.isSystem ? "disabled" : 'data-flag="priority" data-id="' + a.id + '"'} ${a.priority ? "checked" : ""} style="width:auto; min-height:auto"></td>
-     <td style="text-align:center"><input type="checkbox" ${a.isSystem ? "disabled" : 'data-flag="gnucash" data-id="' + a.id + '"'} ${a.roles && a.roles.gnucash ? "checked" : ""} style="width:auto; min-height:auto"></td>
-     <td style="text-align:center"><input type="checkbox" ${a.isSystem ? "disabled" : 'data-flag="uebersicht" data-id="' + a.id + '"'} ${a.roles && a.roles.uebersicht ? "checked" : ""} style="width:auto; min-height:auto"></td>
-     <td style="text-align:center"><input type="checkbox" aria-label="Schnapswart" ${a.isSystem ? "disabled" : 'data-flag="schnapswart" data-id="' + a.id + '"'} ${a.roles?.schnapswart ? "checked" : ""} style="width:auto; min-height:auto"></td>
-     <td style="text-align:center"><input type="checkbox" aria-label="Kneipwart" ${a.isSystem ? "disabled" : 'data-flag="kneipwart" data-id="' + a.id + '"'} ${a.roles?.kneipwart ? "checked" : ""} style="width:auto; min-height:auto"></td>
-     <td>${a.isSystem ? '<span class="muted">nicht anmeldbar</span>' : `<button class="btn small" data-reset="${a.id}">Passwort zurücksetzen</button> <button class="btn small" data-delete-account="${a.id}">Löschen</button>`}</td></tr>`).join("");
+     ${[["priority","Priorität"],["gnucash","XXX"],["uebersicht","BW"],["schnapswart","SW"],["kneipwart","KW"]].map(([flag,label])=>`<td class="flag-cell"><label><input type="checkbox" aria-label="${displayText(label+" für "+a.name)}" ${a.isSystem ? "disabled" : 'data-flag="'+flag+'" data-id="'+displayText(a.id)+'"'} ${(flag==="priority" ? a.priority : a.roles?.[flag]) ? "checked" : ""}><span>${label}</span></label></td>`).join("")}
+     <td>${a.isSystem ? '<span class="muted">nicht anmeldbar</span>' : `<button class="btn small" data-reset="${a.id}">Passwort zurücksetzen</button> <button class="btn small danger-action" data-delete-account="${a.id}">Löschen</button>`}</td></tr>`).join("");
   document.querySelectorAll("[data-flag]").forEach(cb => cb.onchange = async () => {
     const body = { accountId: cb.dataset.id };
     body[cb.dataset.flag] = cb.checked;
@@ -382,7 +386,10 @@ function renderAccounts() {
   });
   document.getElementById("depAcc").innerHTML = people.map(a => `<option value="${a.id}">${a.accountNumber ? displayText(a.accountNumber) + " · " : ""}${displayText(a.name)}${a.isSystem ? " · Systemkonto" : ""}</option>`).join("");
 }
+const accountDialog = BW.dialog(document.getElementById("createAccount"), () => !document.getElementById("btnCreate").disabled);
+document.getElementById("openAccount").onclick = () => { document.querySelector(".admin-account-form").reset(); accountDialog.open(); document.getElementById("newName").focus(); };
 BW.mountAccountForm(document.querySelector(".admin-account-form"), async account => {
+  document.getElementById("createAccount").close();
   toast(account.name + " angelegt."); await refreshAll();
 });
 document.getElementById("btnDeposit").onclick = async e => {
@@ -441,101 +448,6 @@ document.getElementById("btnAddKind").onclick = async () => {
   kinds = d;
   document.getElementById("newKind").value = "";
   renderEvents();
-};
-
-/* Produkte */
-function collectProducts() {
-  document.querySelectorAll("#prodTable [data-k]").forEach(inp => {
-    const p = products[Number(inp.dataset.i)];
-    if (!p) return;
-    if (inp.type === "checkbox") p[inp.dataset.k] = inp.checked;
-    else if (inp.dataset.k === "ticks") p.ticks = Number(inp.value);
-    else p[inp.dataset.k] = inp.value;
-  });
-}
-function renderProducts() {
-  document.getElementById("prodTable").innerHTML = products.map((p, i) => `
-    <tr data-row="${i}">
-      <td class="grip" draggable="true" title="Zum Sortieren ziehen">⠿</td>
-      <td style="white-space:nowrap">
-        <button class="btn small" data-mv="up" data-i="${i}" ${i === 0 ? "disabled" : ""} title="nach oben">▲</button>
-        <button class="btn small" data-mv="down" data-i="${i}" ${i === products.length - 1 ? "disabled" : ""} title="nach unten">▼</button>
-      </td>
-      <td><img class="prodthumb" src="/assets/res/${displayText(p.image)}" alt=""></td>
-      <td><input data-i="${i}" data-k="name" value="${displayText(p.name)}"></td>
-      <td><input data-i="${i}" data-k="price" value="${typeof p.price === "number" ? p.price.toFixed(2).replace(".", ",") : p.price}" style="max-width:110px"></td>
-      <td><input data-i="${i}" data-k="image" value="${displayText(p.image)}"></td>
-      <td><button class="btn small" data-upl="${i}">Bild hochladen</button></td>
-      <td style="text-align:center"><input type="checkbox" data-i="${i}" data-k="tally" ${p.tally ? "checked" : ""} style="width:auto; min-height:auto"></td>
-      <td><select data-i="${i}" data-k="ticks" style="min-height:38px; max-width:80px"><option value="20"${p.ticks !== 10 ? " selected" : ""}>20</option><option value="10"${p.ticks === 10 ? " selected" : ""}>10</option></select></td>
-      <td><button class="btn small" data-del="${i}">Entfernen</button></td>
-    </tr>`).join("");
-  document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { collectProducts(); products.splice(Number(b.dataset.del), 1); renderProducts(); });
-  document.querySelectorAll("[data-upl]").forEach(b => b.onclick = () => {
-    collectProducts();
-    uploadTarget = Number(b.dataset.upl);
-    document.getElementById("fileUp").click();
-  });
-  document.querySelectorAll("[data-mv]").forEach(b => b.onclick = () => {
-    collectProducts();
-    const i = Number(b.dataset.i), j = b.dataset.mv === "up" ? i - 1 : i + 1;
-    if (j < 0 || j >= products.length) return;
-    [products[i], products[j]] = [products[j], products[i]];
-    renderProducts();
-  });
-  enableDnd("#prodTable", "tr", () => products, renderProducts, collectProducts);
-}
-
-/* Drag & Drop zum Sortieren (Griff = .grip) */
-let dragFrom = null;
-function enableDnd(container, rowSel, getArr, rerender, collect) {
-  const rows = document.querySelectorAll(`${container} ${rowSel}`);
-  rows.forEach((row, idx) => {
-    const grip = row.querySelector(".grip");
-    if (grip) {
-      grip.addEventListener("dragstart", e => { collect(); dragFrom = idx; row.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
-      grip.addEventListener("dragend", () => { dragFrom = null; rows.forEach(r => r.classList.remove("dragging", "over")); });
-    }
-    row.addEventListener("dragover", e => { if (dragFrom !== null) { e.preventDefault(); row.classList.add("over"); } });
-    row.addEventListener("dragleave", () => row.classList.remove("over"));
-    row.addEventListener("drop", e => {
-      e.preventDefault();
-      row.classList.remove("over");
-      if (dragFrom === null || dragFrom === idx) return;
-      const arr = getArr();
-      const [m] = arr.splice(dragFrom, 1);
-      arr.splice(idx, 0, m);
-      dragFrom = null;
-      rerender();
-    });
-  });
-}
-let uploadTarget = null;
-document.getElementById("fileUp").onchange = async e => {
-  const file = e.target.files[0];
-  e.target.value = "";
-  if (file === undefined || uploadTarget === null) return;
-  const safe = file.name.replace(/[^\w.\-äöüÄÖÜß]/g, "_");
-  const r = await fetch(`/api/admin/upload?name=${encodeURIComponent(safe)}`, {
-    method: "POST",
-    headers: { "X-Admin-Pin": pin, "Content-Type": "application/octet-stream" },
-    body: file
-  });
-  const d = await r.json();
-  if (!r.ok) return toast(d.error);
-  collectProducts();
-  products[uploadTarget].image = d.file;
-  renderProducts();
-  toast(`Bild ${d.file} hochgeladen ✓ – noch „Speichern“ klicken`);
-};
-document.getElementById("btnAddProd").onclick = () => { collectProducts(); products.push({ name: "", price: 0, image: "", tally: false, ticks: 20 }); renderProducts(); };
-document.getElementById("btnSaveProd").onclick = async () => {
-  collectProducts();
-  const r = await fetch("/api/admin/products", { method: "PUT", headers: H(), body: JSON.stringify({ products }) });
-  const d = await r.json();
-  if (!r.ok) return toast(d.error);
-  products = d.products; renderProducts();
-  toast("Gespeichert ✓ (products.csv)");
 };
 
 /* GnuCash-Arbeitsbereich (Buchungsläufe, Kassenbuch, Kontenzuordnung) */

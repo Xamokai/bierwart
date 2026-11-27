@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bierwart · lokale Testdaten</title>
+<style>body{margin:0;font:16px system-ui}iframe{display:block;width:100%;height:calc(100dvh - 56px);border:0}nav{height:56px;display:flex;align-items:center;justify-content:center;gap:6px;background:#eee}a{padding:8px;color:#222}a[aria-current]{background:white;font-weight:700}</style>
+<iframe title="Mein Konto mit Testdaten"></iframe><nav aria-label="Datensatz"></nav>
+<script>
+(async()=>{
+  const cases={demo:["Demo","Marlene Hofmann"],worst:["Extremfall · 1.001","Aleksandra Wiśniewska-Kowalczyk"],empty:["Leer","Jo"],one:["Ein Eintrag","J"]};
+  const key=new URLSearchParams(location.search).get("data") || "demo";
+  for(const [id,[label]] of Object.entries(cases)){
+    const a=document.createElement("a");a.href="?data="+id;a.textContent=label;
+    if(id===key)a.setAttribute("aria-current","page");document.querySelector("nav").append(a);
+  }
+  const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:(cases[key]||cases.demo)[1],password:"Probe"})});
+  const result=await r.json(); if(!r.ok) throw Error(result.error);
+  localStorage.setItem("kasse_token",result.token); document.querySelector("iframe").src="/user.html";
+})().catch(err=>document.querySelector("nav").append(err.message));
+</script></html>

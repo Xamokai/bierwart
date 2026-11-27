@@ -23,30 +23,14 @@ function mountAccountingActions({headers, getAccounts, afterImport}) {
     const today = new Date().toLocaleDateString("de-DE");
     const w = window.open("", "_blank");
     if (!w) return BW.toast("Bitte das Druckfenster im Browser zulassen.");
-    w.document.write(`<!doctype html><html lang="de"><head><meta charset="utf-8">
-    <title>Negativ-Liste ${today}</title>
-    <style>
-      body { font-family: "Segoe UI", system-ui, sans-serif; color: #221f18; margin: 40px; }
-      .head { border-bottom: 3px solid #d4af37; padding-bottom: 10px; margin-bottom: 20px; }
-      h1 { margin: 0; font-size: 1.3rem; letter-spacing: .12em; text-transform: uppercase; }
-      .muted { color: #837c6b; font-size: .9rem; }
-      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-      th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #ddd; }
-      th { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: #837c6b; }
-      td.r, th.r { text-align: right; }
-      .neg { color: #b53d2e; font-weight: 600; }
-      tfoot td { border-top: 2px solid #221f18; font-weight: 700; }
-      @media print { body { margin: 12mm; } }
-    </style></head><body>
-    <div class="head"><h1>Getränkekasse – Offene Beträge</h1>
-    <div class="muted">Stand: ${today} · ${neg.length} Konto/Konten im Minus</div></div>
+    BW.printDocument(w,"Negativ-Liste "+today,
+    `<div class="head"><h1>Getränkekasse – Offene Beträge</h1>
+    <div class="muted">Stand: ${today} · ${neg.length} ${neg.length===1 ? "Konto" : "Konten"} im Minus</div></div>
     <table><thead><tr><th>Name</th><th class="r">Guthaben</th></tr></thead>
     <tbody>${neg.map(a => `<tr><td>${displayText(a.name)}</td><td class="r neg">${BW.money(a.balance)}</td></tr>`).join("")}</tbody>
     <tfoot><tr><td>Summe offen</td><td class="r neg">${BW.money(total)}</td></tr></tfoot></table>
     <p class="muted">Bitte Guthaben aufladen. – Erstellt mit der Getränkekasse.</p>
-    </body></html>`);
-    w.addEventListener("load", () => w.print(), {once:true});
-    w.document.close();
+    `);
   };
   id("btnImport").onclick = async e => {
     const button = e.currentTarget;

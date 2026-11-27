@@ -6,7 +6,7 @@ function mountTemporaryDrinks({trigger, reload, getShared, getEvent}) {
   sheet.setAttribute("aria-labelledby", "drinks-title");
   sheet.innerHTML = `
     <div class="dialog-head"><h2 id="drinks-title">Temporäre Getränke</h2>
-      <button type="button" class="btn ghost small" data-close>Schließen</button></div>
+      <button type="button" class="btn ghost small" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
     <form class="drink-form">
       <label>Getränkename<input name="name" required maxlength="120" placeholder="z. B. Apfelschorle"></label>
       <label>Preis in €<input name="price" required inputmode="decimal" placeholder="0,00"></label>

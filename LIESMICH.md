@@ -1,4 +1,4 @@
-# Bierwart LAN 1.12.0
+# Bierwart LAN 1.13.0
 
 ## Update einspielen
 
@@ -9,6 +9,8 @@
 ## Einstieg auf Handy, Tablet und PC
 
 Die normale BW-Adresse öffnet auf dem Handy **Mein Konto**, auf dem Tablet die **Strichliste** und am PC die **Verwaltung**. Eine bestehende Anmeldung wird verwendet. Über die Bereichslinks lässt sich jederzeit wechseln. Für ein festes Lesezeichen stehen `/strichliste.html`, `/veranstaltung.html`, `/user.html` und `/admin.html` zur Verfügung. Auch bisherige Strichlisten- und Veranstaltungslinks funktionieren weiter.
+
+Die Oberfläche folgt dem hellen oder dunklen Farbschema des Geräts. Mit dem Sonne-Mond-Schalter lässt sich die Ansicht für diesen Browser umstellen. Die [Galerie mit Geräteansichten und Druckbeispielen](Screenshots/index.html) enthält auch die aufgeklappte Produktpflege und das Kassenbuch.
 
 Am PC öffnet **Mein Konto** mit **Meine Buchungen**. Das Kontomenü führt zum Getränkekauf, zu den Kontoeinstellungen und zu den freigeschalteten BW- und XXX-Bereichen. E-Mail-Adresse und Passwort stehen auf dem PC unter **Kontoeinstellungen**.
 

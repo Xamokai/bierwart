@@ -22,6 +22,7 @@ function groupStockCounts(records, all) {
 }
 
 function mountStockCounts(root, headers) {
+  root.classList.add("stock-workspace");
   const api = "/api/stock-counts";
   const areas = {spirits:"Schnaps & Barzutaten", drinks:"Bierwart-Getränke", cash:"Barkasse"};
   const esc = displayText;
@@ -31,16 +32,18 @@ function mountStockCounts(root, headers) {
     return new Date(now - now.getTimezoneOffset()*60000).toISOString().slice(0,10);
   };
   root.innerHTML = `
+    <div class="stock-views" role="group" aria-label="Auszählungen"><button type="button" class="btn" data-view-count="entry">Erfassen</button><button type="button" class="btn" data-view-count="archive">Archiv</button></div>
+    <p role="status" data-status></p>
     <form class="card stock-form">
       <h2>Zählung erfassen</h2>
       <div class="stock-fields">
-        <label>Name der Zählung<input name="title" required maxlength="120" placeholder="z. B. Semesterabschluss"></label>
-        <label>Datum<input name="date" type="date" required></label>
-        <label>Bereich<select name="area"></select></label>
         <label>Anlass<select name="scope"><option value="stock">Lagerzählung</option><option value="event">Veranstaltung</option></select></label>
+        <label>Bereich<select name="area"></select></label>
         <label data-event hidden>Veranstaltung<select name="eventId"></select></label>
         <label data-phase hidden>Zeitpunkt<select name="phase"><option value="before">Vorzählung</option><option value="after">Nachzählung</option></select></label>
         <label data-opening hidden>Zugehörige Vorzählung<select name="beforeId"></select></label>
+        <label>Name der Zählung<input name="title" required maxlength="120" placeholder="z. B. Semesterabschluss"></label>
+        <label>Datum<input name="date" type="date" required></label>
       </div>
       <h3 data-items-title>Getränke zählen</h3>
       <div data-picker>
@@ -55,7 +58,6 @@ function mountStockCounts(root, headers) {
         <label>Flaschenpreis (€)<input name="price" inputmode="decimal" required placeholder="0,00"></label>
         <button class="btn" type="submit">Getränk anlegen</button></form>
     </details>
-    <p role="status" data-status></p>
     <section class="card" data-archive hidden>
       <div class="section-head"><h2>Gespeicherte Zählungen</h2><button class="btn small" type="button" data-print-all>Alle drucken</button></div>
       <div data-records></div>
@@ -64,6 +66,14 @@ function mountStockCounts(root, headers) {
   const form = root.querySelector(".stock-form"), f = form.elements;
   const productForm = find("new").querySelector("form");
   const status = find("status");
+  function showView(view) {
+    root.dataset.countView = view;
+    for (const b of root.querySelectorAll("[data-view-count]")) b.setAttribute("aria-pressed",String(b.dataset.viewCount === view));
+  }
+  root.querySelector(".stock-views").onclick = e => {
+    const b = e.target.closest("[data-view-count]");
+    if (b) showView(b.dataset.viewCount);
+  };
   let options, records = [], drafts = new Map(), generation = 0, requestId, saving = false;
   let editing = null, editRows;
   const selected = () => editing ? editRows : drafts.get(f.area.value);
@@ -81,6 +91,7 @@ function mountStockCounts(root, headers) {
     requestId = Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2,"0")).join("");
   }
   function reset() {
+    showView("entry");
     generation++; options = null; records = []; drafts = new Map();
     stopEdit(); form.reset(); f.date.value = today(); form.querySelector("button[type=submit]").disabled = true;
     find("archive").hidden = find("new").hidden = true;
@@ -202,6 +213,7 @@ function mountStockCounts(root, headers) {
       find("cancel-edit").hidden = false;
     }
     areaChanged(closeCount ? record.id : record.beforeId);
+    showView("entry");
     resetId(); form.scrollIntoView({block:"start"}); f.title.focus({preventScroll:true});
   }
   f.area.onchange = () => { f.search.value = ""; areaChanged(); };
@@ -234,46 +246,77 @@ function mountStockCounts(root, headers) {
 
   const dateDe = iso => iso.split("-").reverse().join(".");
   const phaseName = r => r.scope === "stock" ? "Lagerzählung" : ({before:"Vorzählung",after:"Nachzählung"}[r.phase] || "Veranstaltungszählung");
-  function context(record) {
-    return [dateDe(record.date),areas[record.area],record.eventName,phaseName(record),record.countedBy].filter(Boolean).join(" · ");
-  }
   function table(record) {
     const added = record.phase === "before" && record.area !== "cash";
     return `<table><thead><tr><th>Position</th><th>Anzahl</th>${added ? "<th>Nachgeholt</th>" : ""}<th>Stückpreis</th><th>Wert</th></tr></thead><tbody>${record.items.map(item =>
-      `<tr><td>${esc(item.name)}</td><td>${item.quantity.toLocaleString("de-DE")}</td>${added ? "<td>"+(item.restocked || 0).toLocaleString("de-DE")+"</td>" : ""}<td>${money(item.priceCents)}</td><td>${money(item.valueCents)}</td></tr>`).join("")}</tbody>
+      `<tr><td>${esc(item.name)}</td><td data-label="Anzahl">${item.quantity.toLocaleString("de-DE")}</td>${added ? '<td data-label="Nachgeholt">'+(item.restocked || 0).toLocaleString("de-DE")+"</td>" : ""}<td data-label="Stückpreis">${money(item.priceCents)}</td><td data-label="Wert">${money(item.valueCents)}</td></tr>`).join("")}</tbody>
       <tfoot><tr><th colspan="${added ? 4 : 3}">Gesamtwert</th><td>${money(record.totalCents)}</td></tr></tfoot></table>`;
   }
-  function difference(record) {
+  function comparisonTotal(diff) {
+    return `<dl class="count-totals"><div><dt>Differenz</dt><dd>${money(diff.differenceCents)}</dd></div><div><dt>Bereits gebucht</dt><dd>${money(diff.bookedCents)}</dd></div><div><dt>Offen</dt><dd>${money(diff.pendingCents)}</dd></div></dl>`;
+  }
+  function differenceTable(record) {
     const diff = record.comparison;
     if (!diff) return "";
     const cash = record.area === "cash";
-    return `<h4>${cash ? "Barkassendifferenz" : "Getränkeverbrauch"}</h4>
-      <div class="stock-table"><table><thead><tr><th>Position</th><th>Vorher</th>${cash ? "" : "<th>Nachgeholt</th>"}<th>Nachher</th><th>Differenz</th><th>Wert</th></tr></thead>
-      <tbody>${diff.lines.map(i => `<tr><td>${esc(i.name)}</td><td>${i.first.toLocaleString("de-DE")}</td>${cash ? "" : "<td>"+i.added.toLocaleString("de-DE")+"</td>"}<td>${i.last.toLocaleString("de-DE")}</td><td>${i.quantity.toLocaleString("de-DE")}</td><td>${money(i.valueCents)}</td></tr>`).join("")}</tbody></table></div>
-      <p>Gesamt <strong>${money(diff.differenceCents)}</strong> · Bereits gebucht ${money(diff.bookedCents)} · Offen <strong>${money(diff.pendingCents)}</strong></p>`;
+    return `<div class="stock-table"><table><thead><tr><th>Position</th><th>Vorher</th>${cash ? "" : "<th>Nachgeholt</th>"}<th>Nachher</th><th>Differenz</th><th>Wert</th></tr></thead>
+      <tbody>${diff.lines.map(i => `<tr><td>${esc(i.name)}</td><td data-label="Vorher">${i.first.toLocaleString("de-DE")}</td>${cash ? "" : '<td data-label="Nachgeholt">'+i.added.toLocaleString("de-DE")+"</td>"}<td data-label="Nachher">${i.last.toLocaleString("de-DE")}</td><td data-label="Differenz">${i.quantity.toLocaleString("de-DE")}</td><td data-label="Wert">${money(i.valueCents)}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+  function countReceipt(record, opening) {
+    const diff = record.comparison;
+    const cash = record.area === "cash";
+    const title = record.name || phaseName(record);
+    const phases = opening ? [opening,record] : [record];
+    const phaseRows = phases.map(r => `<tr><th scope="row">${esc(phaseName(r))}${r.name && r.name !== title ? "<small>"+esc(r.name)+"</small>" : ""}</th>
+      <td>${esc(dateDe(r.date))}</td><td>${esc(r.countedBy || "–")}</td><td>${money(r.totalCents)}${r.items.some(i => i.restocked) ? "<small>inkl. Nachschub</small>" : ""}</td></tr>`).join("");
+    const source = `<table class="receipt-source"><thead><tr><th>Zählung</th><th>Datum</th><th>Gezählt von</th><th>Bestandswert</th></tr></thead><tbody>${phaseRows}</tbody></table>`;
+    let positions = table(record);
+    if (diff) {
+      const rows = diff.lines.map(line => `<tr><th scope="row">${esc(line.name)}<small>${money(line.priceCents)} / Stück</small></th>
+        <td>${line.first.toLocaleString("de-DE")}</td>${cash ? "" : "<td>"+line.added.toLocaleString("de-DE")+"</td>"}
+        <td>${line.last.toLocaleString("de-DE")}</td><td>${line.quantity.toLocaleString("de-DE")}</td><td>${money(line.valueCents)}</td></tr>`).join("");
+      positions = `<table><thead><tr><th>Position</th><th>Vorher</th>${cash ? "" : "<th>Nachgeholt</th>"}<th>Nachher</th>
+        <th>${cash ? "Differenz" : "Verbrauch"}</th><th>Wert</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    const outcome = diff ? comparisonTotal(diff) : "";
+    return `<article class="receipt"><header><h3>${esc(title)}</h3><p>${esc(areas[record.area] || record.area)}</p></header>
+      ${outcome}${source}<h4>${diff ? (cash ? "Barkassendifferenz" : "Getränkeverbrauch") : "Gezählte Positionen"}</h4>${positions}</article>`;
   }
   function print(list) {
     const win = window.open("", "_blank");
     if (!win) { status.textContent = "Bitte das Druckfenster im Browser zulassen."; return; }
-    const body = groupStockCounts(list,records).map(group => '<section><h1>'+esc(group.semester)+'</h1>'+
-      group.events.map(event => '<h2>'+esc(event.name)+'</h2>'+event.entries.map(r =>
-        '<article><h3>'+esc(r.name)+'</h3><p>'+esc(context(r))+'</p>'+table(r)+difference(r)+'</article>').join("")).join("")+'</section>').join("");
-    win.document.write('<!doctype html><html lang="de"><meta charset="utf-8"><title>Auszählungen</title><style>body{font:11pt sans-serif;color:#221f18;margin:12mm}section+section{break-before:page}h1,h2,h3,h4{break-after:avoid}table{width:100%;border-collapse:collapse}th,td{padding:5pt;text-align:right;border-bottom:1px solid #bbb}th:first-child,td:first-child{text-align:left}tr{break-inside:avoid}tfoot{display:table-row-group}</style><body>'+body+'</body></html>');
-    win.addEventListener("load", () => win.print(), {once:true});
-    win.document.close();
+    const selected = new Map(list.map(r => [r.id,r]));
+    const paired = new Set(list.filter(r => r.comparison).map(r => r.beforeId));
+    const groups = groupStockCounts(list,records);
+    const pages = groups.map(group => group.events.map(event => {
+      const receipts = event.entries.filter(r => !paired.has(r.id)).map(r => countReceipt(r,selected.get(r.beforeId)));
+      return `<section class="receipt-event"><header class="receipt-heading"><p>${esc(group.semester)}</p><h2>${esc(event.name)}</h2></header>${receipts.join("")}</section>`;
+    }).join("")).join("");
+    const title = list.length === 1 ? phaseName(list[0])+" · Zählprotokoll" : "Auszählungsprotokoll";
+    BW.printDocument(win,title,'<main class="count-report"><h1>'+esc(title)+'</h1>'+pages+'</main>');
   }
   find("print-all").onclick = () => print(records);
   function recordView(r, byOpening) {
     const editable = r.scope === "event" && !!options.catalogs[r.area] && options.events.some(e => e.id === r.eventId);
     const actions = [];
+    if (r.comparison?.pendingCents && (editable || options.canReview) && options.events.some(e => e.id === r.eventId))
+      actions.push(`<button class="btn gold" type="button" data-book="${esc(r.id)}">${money(r.comparison.pendingCents)} auf Veranstaltung buchen</button>`);
     if (editable) actions.push(`<button class="btn small" type="button" data-edit="${esc(r.id)}">Bearbeiten</button>`);
     if (editable && r.phase === "before" && !byOpening.has(r.id))
       actions.push(`<button class="btn small" type="button" data-close-count="${esc(r.id)}">Nachzählung erfassen</button>`);
-    if (r.comparison?.pendingCents && (editable || options.canReview) && options.events.some(e => e.id === r.eventId))
-      actions.push(`<button class="btn gold" type="button" data-book="${esc(r.id)}">${money(r.comparison.pendingCents)} auf Veranstaltung buchen</button>`);
     if (options.canReview) actions.push(`<button class="btn small" type="button" data-print="${esc(r.id)}">Drucken</button>`);
-    return `<details class="daygroup stock-record" data-key="r-${esc(r.id)}"><summary><strong>${esc(phaseName(r))} · ${esc(r.name)}</strong><span>${dateDe(r.date)} · ${money(r.totalCents)}</span></summary>
-      <div class="body"><p>${esc(context(r))}</p><div class="stock-table">${table(r)}</div>${difference(r)}<div class="row">${actions.join("")}</div></div></details>`;
+    const diff = r.comparison;
+    let state = "";
+    if (diff) state = diff.pendingCents ? "Offen "+money(diff.pendingCents) : "Ausgeglichen";
+    else if (r.phase === "before") state = byOpening.has(r.id) ? "Nachzählung vorhanden" : "Nachzählung ausstehend";
+    return `<details class="daygroup stock-record" data-key="r-${esc(r.id)}"><summary>
+      <span class="count-phase"><strong>${esc(phaseName(r))}</strong><small>${esc(r.name)}</small></span>
+      <span class="count-value"><strong>${money(r.totalCents)}</strong><small>${dateDe(r.date)}</small></span>
+      ${state ? '<span class="count-state">'+state+'</span>' : ""}</summary>
+      <div class="body"><p class="count-context">${esc([areas[r.area],r.countedBy].filter(Boolean).join(" · "))}</p>
+      ${diff ? comparisonTotal(diff) : ""}<div class="count-actions">${actions.join("")}</div>
+      ${diff ? '<details class="count-lines"><summary>Vergleich je Position</summary>'+differenceTable(r)+'</details>' : ""}
+      <details class="count-lines"><summary>Gezählte Positionen (${r.items.length})</summary><div class="stock-table">${table(r)}</div></details></div></details>`;
   }
   async function history(stamp, revealId) {
     const saved = await BW.api(options.canReview ? api : api+"/events",{headers:headers()});
@@ -358,7 +401,7 @@ function mountStockCounts(root, headers) {
       clearForm();
       status.textContent = "Zählung gespeichert · "+money(result.totalCents);
       await history(stamp,result.id);
-      if (stamp === generation) scopeChanged();
+      if (stamp === generation) { scopeChanged(); showView("archive"); }
     } catch (error) {
       if (stamp === generation) { status.textContent = error.message; await refresh(); }
     } finally { saving = false; form.inert = false; if (options) total(); }

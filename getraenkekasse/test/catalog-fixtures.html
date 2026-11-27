@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>Produktkatalog · lokale Testdaten</title><script src="theme.js"></script><link rel="stylesheet" href="style.css">
+<style>
+body{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100vh;height:100dvh}
+main{width:100%;max-width:64rem;overflow-y:auto;padding-bottom:2rem}
+.fixture-switch{display:flex;min-width:0;overflow-x:auto;align-items:center;background:var(--surface);gap:.5rem;padding:.4rem}
+.fixture-switch a{padding:.35rem;white-space:nowrap}
+.fixture-switch a[aria-current]{font-weight:bold}
+</style></head>
+<body><main><h1>Produkte &amp; Preise</h1><div class="card"><div id="catalog"></div></div></main>
+<nav class="fixture-switch" aria-label="Testdaten"></nav><div id="toast" role="status" class="toast"></div>
+<script src="display.js"></script><script src="ui.js"></script><script src="product-editor.js"></script>
+<script>
+(async () => {
+  const key = new URLSearchParams(location.search).get("data") || "demo";
+  const demo = await BW.api("/api/products");
+  const worst = [
+    {name:"Hausgemachter Johannisbeer-Rhabarber-Spritz (alkoholfrei)",price:12.5,image:"",tally:true,ticks:20},
+    {name:"H",price:0,image:"Getraenke-Sonderabfuellung-Winter-2026-Ansicht-vorne.png",tally:false,ticks:10},
+    {name:"Sonderabfüllung – Festkommers und Veranstaltungsabrechnung",price:1234567.89,image:"",tally:true,ticks:20},
+    {name:"Trà chanh · Ingwer & Limette",price:1.25,image:"",tally:true,ticks:10}
+  ];
+  const many = Array.from({length:1001}, (_,i)=>({...worst[i%worst.length],name:worst[i%worst.length].name+" · Charge "+(i+1)}));
+  const states = {demo:["Demo",demo],worst:["Extremfall",worst],empty:["Leer",[]],one:["Ein Produkt",worst.slice(0,1)],many:["1.001 Produkte",many]};
+  for (const [id,[label]] of Object.entries(states)) {
+    const link = document.createElement("a"); link.textContent = label; link.href = "?data="+id;
+    if (id === key) link.setAttribute("aria-current","page");
+    document.querySelector("nav").append(link);
+  }
+  mountProductEditor(document.getElementById("catalog"),()=>({})).load((states[key] || states.demo)[1]);
+})();
+</script></body></html>

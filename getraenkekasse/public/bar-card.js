@@ -4,7 +4,7 @@ function mountEventCard(trigger,getEvent,reload) {
   const dialog=document.createElement("dialog");
   dialog.className="bw-dialog compact-dialog";
   dialog.setAttribute("aria-labelledby","bar-card-title");
-  dialog.innerHTML=`<div class="dialog-head"><h2 id="bar-card-title">Getränkekarte</h2><button type="button" class="btn small" data-close>Schließen</button></div>
+  dialog.innerHTML=`<div class="dialog-head"><h2 id="bar-card-title">Getränkekarte</h2><button type="button" class="btn small" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
     <h3 data-event-name></h3><div class="bar-actions" data-prints></div>
     <h3>Aus dem Rezeptkatalog hinzufügen</h3><div class="bar-list"></div>
     <div class="bar-actions"><button class="btn gold" data-submit disabled>Auswahl hinzufügen</button></div>

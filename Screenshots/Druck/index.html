@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Druckvorlagen · Bierwart</title>
+  <link rel="stylesheet" href="vorschau.css">
+  <style>
+    :root { color-scheme:light dark; --panel:#fff; --paper:#faf8f3; --ink:#221f18; --link:#806013; --line:#938b78; }
+    @media (prefers-color-scheme:dark) {
+      :root { --panel:#25231f; --paper:#191816; --ink:#f3efe6; --link:#e3bf69; }
+    }
+    * { box-sizing:border-box; }
+    body { max-width:48rem; margin:auto; padding:clamp(1rem,4vw,3rem); background:var(--paper); color:var(--ink); font:1rem/1.5 system-ui,sans-serif; }
+    h1 { font:normal 2.2rem/1.2 Georgia,serif; margin-bottom:.5rem; }
+    a { color:var(--link); text-underline-offset:.16em; }
+    a:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+    dt { font-weight:650; padding-top:.7rem; border-top:1px solid var(--line); }
+    dd { margin:0 0 .55rem; display:flex; gap:0 1.25rem; flex-wrap:wrap; }
+    dd a { display:inline-flex; align-items:center; min-height:44px; }
+  </style>
+</head>
+<body>
+  <nav aria-label="Galerie"><a href="../index.html">Zur Screenshot-Galerie</a></nav>
+  <main>
+    <h1>Druckvorlagen</h1>
+    <p>Beispielausgaben aus der lokalen Testkasse.</p>
+    <div id="druck"></div>
+    <noscript><dl>
+      <dt>Papier-Strichliste</dt>
+      <dd><a href="Papier-Strichliste.pdf">Druckansicht (PDF)</a><a href="Papier-Strichliste.ods">Tabelle (ODS)</a></dd>
+      <dt>Vor- und Nachzählungen</dt>
+      <dd><a href="Auszaehlungen.pdf">Nach Semester und Veranstaltung (PDF)</a><a href="Auszaehlung-Einzel.pdf">Einzelne Nachzählung (PDF)</a></dd>
+      <dt>Offene Beträge</dt>
+      <dd><a href="Offene-Betraege.pdf">Kontenliste mit Gesamtsumme (PDF)</a></dd>
+      <dt>Aktivenessen</dt>
+      <dd><a href="Aktivenessen.pdf">Einzelnes Essen mit Beleg (PDF)</a><a href="Aktivenessen-Semester.pdf">Gesamtes Semester (PDF)</a></dd>
+      <dt>Mixliste</dt>
+      <dd><a href="Mixliste.pdf">Gesamter Katalog (PDF)</a><a href="Mixliste-Veranstaltung.pdf">Ankneipe (PDF)</a></dd>
+      <dt>Preisliste</dt>
+      <dd><a href="Preisliste.pdf">Gesamter Katalog (PDF)</a><a href="Preisliste-Veranstaltung.pdf">Ankneipe (PDF)</a></dd>
+    </dl></noscript>
+  </main>
+  <script src="vorschau.js"></script>
+  <script src="druckseite.js"></script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-27T02:20:06.482664+00:00",
+  "title": "Design System: Bierwart der Uttenruthia",
+  "extensions": {
+    "colorMeta": {
+      "black": {
+        "role": "neutral",
+        "displayName": "Kopf und Saldo",
+        "tonalRamp": [
+          "oklch(15% 0.0047 88.8)",
+          "oklch(26% 0.0075 88.8)",
+          "oklch(38% 0.0096 88.8)",
+          "oklch(50% 0.0103 88.8)",
+          "oklch(62% 0.0096 88.8)",
+          "oklch(74% 0.0075 88.8)",
+          "oklch(86% 0.0044 88.8)",
+          "oklch(95% 0.0016 88.8)"
+        ]
+      },
+      "gold": {
+        "role": "primary",
+        "displayName": "Auswahl und Hauptaktion",
+        "tonalRamp": [
+          "oklch(15% 0.0597 90.1)",
+          "oklch(26% 0.0959 90.1)",
+          "oklch(38% 0.1224 90.1)",
+          "oklch(50% 0.1316 90.1)",
+          "oklch(62% 0.1224 90.1)",
+          "oklch(74% 0.0959 90.1)",
+          "oklch(86% 0.0560 90.1)",
+          "oklch(95% 0.0206 90.1)"
+        ]
+      },
+      "gold-dark": {
+        "role": "primary",
+        "displayName": "Goldkontur",
+        "tonalRamp": [
+          "oklch(15% 0.0442 83.8)",
+          "oklch(26% 0.0709 83.8)",
+          "oklch(38% 0.0905 83.8)",
+          "oklch(50% 0.0973 83.8)",
+          "oklch(62% 0.0905 83.8)",
+          "oklch(74% 0.0709 83.8)",
+          "oklch(86% 0.0414 83.8)",
+          "oklch(95% 0.0152 83.8)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Weiße Fläche",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.9)",
+          "oklch(26% 0.0000 89.9)",
+          "oklch(38% 0.0000 89.9)",
+          "oklch(50% 0.0000 89.9)",
+          "oklch(62% 0.0000 89.9)",
+          "oklch(74% 0.0000 89.9)",
+          "oklch(86% 0.0000 89.9)",
+          "oklch(95% 0.0000 89.9)"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Seitenhintergrund",
+        "tonalRamp": [
+          "oklch(15% 0.0032 88.6)",
+          "oklch(26% 0.0051 88.6)",
+          "oklch(38% 0.0065 88.6)",
+          "oklch(50% 0.0070 88.6)",
+          "oklch(62% 0.0065 88.6)",
+          "oklch(74% 0.0051 88.6)",
+          "oklch(86% 0.0030 88.6)",
+          "oklch(95% 0.0011 88.6)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Fließtext",
+        "tonalRamp": [
+          "oklch(15% 0.0062 87.6)",
+          "oklch(26% 0.0099 87.6)",
+          "oklch(38% 0.0127 87.6)",
+          "oklch(50% 0.0136 87.6)",
+          "oklch(62% 0.0127 87.6)",
+          "oklch(74% 0.0099 87.6)",
+          "oklch(86% 0.0058 87.6)",
+          "oklch(95% 0.0021 87.6)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Begleittext",
+        "tonalRamp": [
+          "oklch(15% 0.0110 88.8)",
+          "oklch(26% 0.0176 88.8)",
+          "oklch(38% 0.0225 88.8)",
+          "oklch(50% 0.0242 88.8)",
+          "oklch(62% 0.0225 88.8)",
+          "oklch(74% 0.0176 88.8)",
+          "oklch(86% 0.0103 88.8)",
+          "oklch(95% 0.0038 88.8)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Trennlinie",
+        "tonalRamp": [
+          "oklch(15% 0.0102 89.8)",
+          "oklch(26% 0.0163 89.8)",
+          "oklch(38% 0.0208 89.8)",
+          "oklch(50% 0.0224 89.8)",
+          "oklch(62% 0.0208 89.8)",
+          "oklch(74% 0.0163 89.8)",
+          "oklch(86% 0.0095 89.8)",
+          "oklch(95% 0.0035 89.8)"
+        ]
+      },
+      "outline": {
+        "role": "neutral",
+        "displayName": "Feldkontur",
+        "tonalRamp": [
+          "oklch(15% 0.0132 87.9)",
+          "oklch(26% 0.0212 87.9)",
+          "oklch(38% 0.0270 87.9)",
+          "oklch(50% 0.0291 87.9)",
+          "oklch(62% 0.0270 87.9)",
+          "oklch(74% 0.0212 87.9)",
+          "oklch(86% 0.0124 87.9)",
+          "oklch(95% 0.0045 87.9)"
+        ]
+      },
+      "priority": {
+        "role": "secondary",
+        "displayName": "Kontur für priorisierte Konten und dauerhafte Veranstaltungen",
+        "tonalRamp": [
+          "oklch(15% 0.0660 56.1)",
+          "oklch(26% 0.1060 56.1)",
+          "oklch(38% 0.1351 56.1)",
+          "oklch(50% 0.1453 56.1)",
+          "oklch(62% 0.1351 56.1)",
+          "oklch(74% 0.1060 56.1)",
+          "oklch(86% 0.0619 56.1)",
+          "oklch(95% 0.0227 56.1)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Fokus",
+        "tonalRamp": [
+          "oklch(15% 0.0453 80.0)",
+          "oklch(26% 0.0728 80.0)",
+          "oklch(38% 0.0928 80.0)",
+          "oklch(50% 0.0998 80.0)",
+          "oklch(62% 0.0928 80.0)",
+          "oklch(74% 0.0728 80.0)",
+          "oklch(86% 0.0425 80.0)",
+          "oklch(95% 0.0156 80.0)"
+        ]
+      },
+      "red": {
+        "role": "secondary",
+        "displayName": "Fehler und Minus",
+        "tonalRamp": [
+          "oklch(15% 0.0590 29.4)",
+          "oklch(26% 0.0947 29.4)",
+          "oklch(38% 0.1208 29.4)",
+          "oklch(50% 0.1299 29.4)",
+          "oklch(62% 0.1208 29.4)",
+          "oklch(74% 0.0947 29.4)",
+          "oklch(86% 0.0553 29.4)",
+          "oklch(95% 0.0203 29.4)"
+        ]
+      },
+      "green": {
+        "role": "secondary",
+        "displayName": "Erfolg und Plus",
+        "tonalRamp": [
+          "oklch(15% 0.0456 139.8)",
+          "oklch(26% 0.0732 139.8)",
+          "oklch(38% 0.0933 139.8)",
+          "oklch(50% 0.1004 139.8)",
+          "oklch(62% 0.0933 139.8)",
+          "oklch(74% 0.0732 139.8)",
+          "oklch(86% 0.0427 139.8)",
+          "oklch(95% 0.0157 139.8)"
+        ]
+      },
+      "tint": {
+        "role": "primary",
+        "displayName": "Auswahlfläche",
+        "tonalRamp": [
+          "oklch(15% 0.0212 95.2)",
+          "oklch(26% 0.0340 95.2)",
+          "oklch(38% 0.0433 95.2)",
+          "oklch(50% 0.0466 95.2)",
+          "oklch(62% 0.0433 95.2)",
+          "oklch(74% 0.0340 95.2)",
+          "oklch(86% 0.0198 95.2)",
+          "oklch(95% 0.0073 95.2)"
+        ]
+      },
+      "on-dark": {
+        "role": "neutral",
+        "displayName": "Begleittext auf Schwarz",
+        "tonalRamp": [
+          "oklch(15% 0.0083 89.4)",
+          "oklch(26% 0.0133 89.4)",
+          "oklch(38% 0.0170 89.4)",
+          "oklch(50% 0.0183 89.4)",
+          "oklch(62% 0.0170 89.4)",
+          "oklch(74% 0.0133 89.4)",
+          "oklch(86% 0.0078 89.4)",
+          "oklch(95% 0.0029 89.4)"
+        ]
+      },
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "Dunkel · Seitenhintergrund"
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dunkel · Weiße Fläche"
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "Dunkel · Fließtext"
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dunkel · Begleittext"
+      },
+      "dark-line": {
+        "role": "neutral",
+        "displayName": "Dunkel · Trennlinie"
+      },
+      "dark-outline": {
+        "role": "neutral",
+        "displayName": "Dunkel · Feldkontur"
+      },
+      "dark-gold-dark": {
+        "role": "primary",
+        "displayName": "Dunkel · Goldkontur"
+      },
+      "dark-tint": {
+        "role": "primary",
+        "displayName": "Dunkel · Auswahlfläche"
+      },
+      "dark-balance-bg": {
+        "role": "neutral",
+        "displayName": "Dunkel · Saldo"
+      },
+      "dark-success-bg": {
+        "role": "neutral",
+        "displayName": "Dunkel · Fläche für Erfolg"
+      },
+      "dark-error-bg": {
+        "role": "neutral",
+        "displayName": "Dunkel · Fläche für Fehler"
+      },
+      "dark-image-bg": {
+        "role": "neutral",
+        "displayName": "Dunkel · Bildhintergrund"
+      },
+      "dark-red": {
+        "role": "secondary",
+        "displayName": "Dunkel · Fehler und Minus"
+      },
+      "dark-green": {
+        "role": "secondary",
+        "displayName": "Dunkel · Erfolg und Plus"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Seitentitel",
+        "purpose": "Seiteneinstieg und Arbeitsbereich."
+      },
+      "section": {
+        "displayName": "Abschnittstitel",
+        "purpose": "Gliedert zusammengehörige Aufgaben."
+      },
+      "body": {
+        "displayName": "Fließtext",
+        "purpose": "Navigation, Eingaben und Beschriftungen."
+      },
+      "balance": {
+        "displayName": "Kontostand",
+        "purpose": "Hervorgehobener Betrag auf der Kontokarte."
+      }
+    },
+    "shadows": [
+      {
+        "name": "Dialog",
+        "value": "0 18px 80px rgba(20,18,13,.22)",
+        "purpose": "Dialog über der ursprünglichen Ansicht."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "Kompakte Buchungszeile",
+        "value": "620px"
+      },
+      {
+        "name": "Seitennavigation",
+        "value": "1000px"
+      },
+      {
+        "name": "Kontenliste und Details",
+        "value": "1200px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Hauptaktion",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Hauptaktion im Arbeitsbereich.",
+      "html": "<button class=\"ds-button-primary\" type=\"button\">Buchen</button>",
+      "css": ".ds-button-primary { background:var(--gold, #e8c358);color:var(--black, #14120d);border:1px solid var(--gold-dark, #806013);border-radius:7px;padding:10px 16px;min-height:48px;font:700 1rem/1.25 Segoe UI, system-ui, -apple-system, Roboto, sans-serif;cursor:pointer; } @media(hover:hover) { .ds-button-primary:hover { border-color:var(--gold-dark, #806013);background:var(--gold, #e8c358); } } .ds-button-primary:active { box-shadow:inset 0 0 0 2px var(--gold-dark, #806013); } .ds-button-primary:focus-visible { outline:2px solid var(--gold-dark, #806013);outline-offset:2px; } .ds-button-primary:disabled { opacity:.6; }"
+    },
+    {
+      "name": "Nebenaktion",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Nebenaktion im Arbeitsbereich.",
+      "html": "<button class=\"ds-button-secondary\" type=\"button\">Bearbeiten</button>",
+      "css": ".ds-button-secondary { background:var(--surface, #fff);color:var(--text, #221f18);border:1px solid var(--outline, #938b78);border-radius:7px;padding:10px 16px;min-height:48px;font:600 1rem/1.25 Segoe UI, system-ui, -apple-system, Roboto, sans-serif;cursor:pointer; } @media(hover:hover) { .ds-button-secondary:hover { border-color:var(--gold-dark, #806013);background:var(--tint, #faf1ce); } } .ds-button-secondary:active { box-shadow:inset 0 0 0 2px var(--gold-dark, #806013); } .ds-button-secondary:focus-visible { outline:2px solid var(--gold-dark, #806013);outline-offset:2px; } .ds-button-secondary:disabled { opacity:.6; }"
+    },
+    {
+      "name": "Transparente Aktion",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Transparente Aktion im Arbeitsbereich.",
+      "html": "<button class=\"ds-button-ghost\" type=\"button\" aria-label=\"Schließen\" title=\"Schließen\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M18 6 6 18M6 6l12 12\"/></svg></button>",
+      "css": ".ds-button-ghost { background:transparent;color:var(--text, #221f18);border:1px solid var(--line, #e6e0d0);border-radius:7px;padding:10px 16px;min-height:48px;font:600 1rem/1.25 Segoe UI, system-ui, -apple-system, Roboto, sans-serif;cursor:pointer; } @media(hover:hover) { .ds-button-ghost:hover { border-color:var(--gold-dark, #806013);background:var(--tint, #faf1ce); } } .ds-button-ghost:active { box-shadow:inset 0 0 0 2px var(--gold-dark, #806013); } .ds-button-ghost:focus-visible { outline:2px solid var(--gold-dark, #806013);outline-offset:2px; } .ds-button-ghost:disabled { opacity:.6; } .ds-button-ghost[aria-label=\"Schließen\"] { display:inline-grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0; }"
+    },
+    {
+      "name": "Kontensuche",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Beschriftetes Suchfeld.",
+      "html": "<label class=\"ds-field\">Konto suchen<input type=\"search\" /></label>",
+      "css": ".ds-field { display:grid;gap:.3rem;color:var(--text, #221f18);font:.88rem/1.5 Segoe UI, system-ui, -apple-system, Roboto, sans-serif; } .ds-field input { min-height:48px;padding:12px 14px;border:1px solid var(--outline, #938b78);border-radius:7px;background:var(--surface, #fff);color:var(--text, #221f18);font:1rem Segoe UI, system-ui, -apple-system, Roboto, sans-serif; } .ds-field input:focus-visible { outline:2px solid var(--gold-dark, #806013);outline-offset:2px; }"
+    },
+    {
+      "name": "Kiosknavigation",
+      "kind": "nav",
+      "refersTo": "kiosk-navigation",
+      "description": "Symbole für Strichliste und Veranstaltungen mit goldener Auswahl und zusätzlicher Desktop-Beschriftung.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Kasse\"><a href=\"#strichliste\" aria-label=\"Strichliste\" aria-current=\"page\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 4v16m5-16v16m5-16v16m5-16v16M22 6 2 18\"/></svg><span>Strichliste</span></a><a href=\"#veranstaltung\" aria-label=\"Veranstaltungen\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M7 3v4m10-4v4M3 11h18\"/></svg><span>Veranstaltungen</span></a></nav>",
+      "css": ".ds-nav {display:flex;gap:4px;padding:8px;background:var(--black, #14120d);font:550 1rem/1.5 Segoe UI, system-ui, -apple-system, Roboto, sans-serif;} .ds-nav a {border-radius:7px;padding:7px 13px;color:var(--on-dark, #e4dfd2);text-decoration:none;} .ds-nav [aria-current] {background:var(--gold, #e8c358);color:var(--black, #14120d);font-weight:700;} .ds-nav a:focus-visible {outline:3px solid var(--gold, #e8c358);outline-offset:3px;} .ds-nav a {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;box-sizing:border-box;} .ds-nav svg {width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;} @media(max-width:999px),(pointer:coarse){.ds-nav a span {display:none;}}"
+    },
+    {
+      "name": "Kontostand",
+      "kind": "card",
+      "refersTo": "balance-card",
+      "description": "Kontobezeichnung und Saldo am Beginn des Verlaufs.",
+      "html": "<div class=\"ds-balance\"><strong>Kontostand</strong><span>28,50 €</span></div>",
+      "css": ".ds-balance {padding:1.5rem;background:var(--balance-bg, #14120d);color:var(--balance-text, #fff);border-radius:12px;font:1.08rem/1.5 Segoe UI, system-ui, -apple-system, Roboto, sans-serif;} .ds-balance span {display:block;margin:.5rem 0 1.4rem;font-weight:550;font-size:clamp(2rem,6vw,3.8rem);font-variant-numeric:tabular-nums;line-height:1.18;letter-spacing:-.04em;}"
+    },
+    {
+      "name": "Priorisiertes Konto",
+      "kind": "button",
+      "refersTo": "priority-account",
+      "description": "Kontokachel innerhalb der Prioritätsgruppe.",
+      "html": "<button class=\"ds-tile\" type=\"button\">Konrad</button>",
+      "css": ".ds-tile {display:flex;align-items:center;text-align:left;padding:14px 16px;min-height:66px;border:1px solid var(--priority, #cc701d);border-radius:9px;background:var(--surface, #fff);color:var(--text, #221f18);font:600 1rem/1.33 Segoe UI, system-ui, -apple-system, Roboto, sans-serif;cursor:pointer;} @media(hover:hover) { .ds-tile:hover {background:var(--tint, #faf1ce);border-color:var(--gold-dark, #806013);} } .ds-tile:focus-visible {outline:3px solid var(--focus, #805b09);outline-offset:3px;} .ds-tile:active {box-shadow:inset 0 0 0 2px var(--gold-dark, #806013);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Die Strichliste der Uttenruthia",
+    "overview": "Schwarz, Weiß und Gold verbinden die öffentliche Kasse, das persönliche Konto und die Verwaltung. Die Kopfzeile enthält Navigation und Farbschemawahl.",
+    "keyCharacteristics": [
+      "Gold kennzeichnet Auswahl und Buchungsaktionen.",
+      "Der Kontostand steht über den jüngsten Buchungen.",
+      "Die Strichliste behält ihre Gruppenfolge auf allen Geräten."
+    ],
+    "rules": [
+      {
+        "name": "Lesbarkeit auf Gold",
+        "body": "Goldene Buttons tragen schwarze Schrift. Helle Goldtöne auf Weiß brauchen eine ergänzende Kontur oder Beschriftung.",
+        "section": "colors"
+      },
+      {
+        "name": "Farbschema",
+        "body": "Das Farbschema folgt anfangs dem Gerät. Der Schalter mit Sonne und Mond wechselt zwischen Hell und Dunkel. Die Wahl gilt im gesamten Browser für Kasse und Update-Seite. Im Fußbereich stellt „Geräte-Farbschema verwenden“ die automatische Wahl wieder her. Im Dunkelmodus liegen warme graubraune Karten auf dunklerem Grund. Helle Schrift und helles Gold halten Texte und Auswahl lesbar. Druckausgaben verwenden die helle Palette.",
+        "section": "colors"
+      },
+      {
+        "name": "Gemeinsame Betragskante",
+        "body": "Buchungsbeträge stehen rechts in Spalten mit gleich breiten Ziffern. Datum, Buchungstext und Folgesaldo bleiben innerhalb desselben Eintrags.",
+        "section": "typography"
+      },
+      {
+        "name": "Dialogkontur",
+        "body": "Jeder Dialog hat an allen vier Seiten eine durchgehende, 1 px dünne Kontur in der neutralen Linienfarbe. Beim Öffnen dunkelt der Hintergrund ab. Rechts oben schließt ein X mit 44 × 44 px Bedienfläche und dem zugänglichen Namen „Schließen“ den Dialog.",
+        "section": "elevation"
+      },
+      {
+        "name": "Sortierziel",
+        "body": "Beim Ziehen eines Produkts kennzeichnet eine umlaufende gestrichelte Kontur in der Goldfarbe für Text und Konturen die Zielzeile. Sie ist 2 px breit und liegt innerhalb der Zeile. Über „Reihenfolge ändern“ lassen sich ein Produkt und seine Zielposition auch per Touch oder Tastatur auswählen.",
+        "section": "components"
+      },
+      {
+        "name": "Menüsymbole",
+        "body": "Auf Handy und Kiosk zeigen die Links zur Strichliste und zu Veranstaltungen jeweils ein Symbol mit mindestens 44 px großer Bedienfläche. Am Desktop steht der Bereichsname daneben. Der Rückweg aus Konto und Verwaltung trägt fünf goldene Striche in einem dünnen Goldrahmen. Reine Symbolaktionen haben einen zugänglichen Namen.",
+        "section": "components"
+      },
+      {
+        "name": "Produktliste",
+        "body": "Bild, Name und rechtsbündiger Preis bilden die Produktzeile. Antippen öffnet die Felder des gewählten Produkts. Der Speichern-Button erscheint bei Änderungen.",
+        "section": "components"
+      },
+      {
+        "name": "Kontolöschung",
+        "body": "Die Aktion „Löschen“ trägt die rote Text- und Konturfarbe des jeweiligen Farbschemas.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Für neue Ansichten die gemeinsamen Variablen aus `getraenkekasse/public/design.css` verwenden.",
+      "Priorisierte Konten mit der schmalen Kontur in ihrer eigenen Gruppe zeigen.",
+      "Die Navigation aus den jeweils freigegebenen Funktionen zusammensetzen."
+    ],
+    "donts": [
+      "Eine Auswahl ausschließlich durch Farbe kennzeichnen.",
+      "Beträge über zwei Zeilen auseinanderziehen oder lange Namen über benachbarte Beträge laufen lassen."
+    ]
+  }
+}

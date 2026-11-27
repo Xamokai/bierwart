@@ -1,25 +1,26 @@
 <!doctype html>
 <html lang="de"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="theme-color" content="#14120d"><script src="theme.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Strichliste – Bierwart</title><link rel="stylesheet" href="style.css">
 </head><body class="kiosk">
-<header class="app"><h1 id="pageTitle">Strichliste</h1>
-  <nav class="pagenav" aria-label="Kasse"><a id="tallyNav" href="strichliste.html" aria-current="page">Strichliste</a>
-    <a id="eventsNav" href="veranstaltung.html">Veranstaltungen</a></nav></header>
+<header class="app">
+  <nav class="pagenav" aria-label="Kasse"><a id="tallyNav" href="strichliste.html" aria-current="page" class="area-link" aria-label="Strichliste" title="Strichliste"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tally-5"></use></svg><span class="area-caption">Strichliste</span></a>
+    <a id="eventsNav" href="veranstaltung.html" class="area-link" aria-label="Veranstaltungen" title="Veranstaltungen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#calendar-days"></use></svg><span class="area-caption">Veranstaltungen</span></a></nav></header>
 <main>
+  <h1 class="page-title" id="pageTitle">Strichliste</h1>
   <div class="tally-toolbar">
-    <input id="search" type="search" placeholder="Name suchen …" aria-label="Name suchen">
-    <button class="btn" id="btnNew" disabled>Konto anlegen</button>
+    <input id="search" type="search" enterkeyhint="search" placeholder="Name suchen …" aria-label="Name suchen">
+    <button class="btn gold icon-action" id="btnNew" disabled aria-label="Konto anlegen" title="Konto anlegen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#user-round-plus"></use></svg></button>
     <button class="btn" id="btnBarCard" hidden>Getränkekarte</button>
     <button class="btn" id="btnEventDrinks" disabled>Temporäre Getränke</button>
-    <button class="btn gold" id="btnActiveMeal">Aktivenessen anlegen</button>
+    <button class="btn" id="btnActiveMeal">Aktivenessen anlegen</button>
   </div>
   <div id="names" aria-label="Konten"><p class="muted" role="status">Konten werden geladen …</p></div>
 </main>
-<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html">Mein Konto</a><a href="admin.html">Verwaltung</a></nav>
+<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#wallet"></use></svg>Mein Konto</a><a href="admin.html"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#shield-check"></use></svg>Verwaltung</a></nav>
 
 <dialog class="bw-dialog order-dialog" id="sheet" aria-labelledby="sheetName">
-  <div class="dialog-head"><h2 id="sheetName"></h2><button class="btn small ghost" data-close>Schließen</button></div>
+  <div class="dialog-head"><h2 id="sheetName"></h2><button class="btn small ghost" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
   <div class="tally" id="sheetTally"></div>
   <div class="drink-grid" id="sheetProducts"></div>
   <div class="order-bar"><span>Summe <strong id="sheetSum"></strong></span><div class="order-actions">
@@ -27,9 +28,9 @@
   </div></div>
 </dialog>
 <dialog class="bw-dialog compact-dialog" id="newAccount" aria-labelledby="newTitle">
-  <div class="dialog-head"><h2 id="newTitle">Konto anlegen</h2><button class="btn ghost small" data-close>Schließen</button></div>
-  <form class="stack-form"><label>Name<input name="name" maxlength="120" required autocomplete="off"></label>
-    <label>Nachname (Startpasswort)<input name="surname" maxlength="120" required autocomplete="off"></label>
+  <div class="dialog-head"><h2 id="newTitle">Konto anlegen</h2><button class="btn ghost small" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
+  <form class="stack-form"><label>Name auf der Strichliste<input name="name" placeholder="z. B. Muster, Max" maxlength="120" required autocomplete="off"></label>
+    <label>Nachname (Startpasswort)<input name="surname" placeholder="z. B. Muster" maxlength="120" required autocomplete="off"></label>
     <button class="btn gold" type="submit">Konto anlegen</button></form>
 </dialog>
 <div class="toast" id="toast" role="status"></div>
@@ -66,6 +67,7 @@ function renderNames() {
       currentGroup = a.group;
       const section = document.createElement("section");
       section.className = "event-group";
+      section.dataset.group = a.group;
       const heading = document.createElement("h3");
       heading.textContent = titles[a.group];
       grid = document.createElement("div");
@@ -123,7 +125,7 @@ if (eventId) {
 } else ActiveMeals.init({triggerId:"btnActiveMeal", toast:BW.toast, onCreated:() => load().catch(e => BW.toast(e.message))});
 function refresh() {
   load().catch(error => {
-    if (!accounts) $("names").textContent = error.message;
+    if (!accounts) BW.retryMessage($("names"),error.message,refresh);
     else BW.toast(error.message);
   });
 }

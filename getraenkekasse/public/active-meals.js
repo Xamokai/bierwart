@@ -25,7 +25,7 @@ window.ActiveMeals = (() => {
       <dialog class="bw-dialog active-meal-sheet" id="${uid}-sheet" aria-labelledby="${uid}-title">
         <div class="dialog-head">
           <h2 id="${uid}-title">Aktivenessen anlegen</h2>
-          <button class="btn small ghost" type="button" data-close>Schließen</button>
+          <button class="btn small ghost" type="button" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button>
         </div>
 
         <div class="active-meal-fields">

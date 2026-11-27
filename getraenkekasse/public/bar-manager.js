@@ -18,7 +18,7 @@ function mountBarManager(root, headers) {
   const editor = document.createElement("dialog");
   editor.className="bw-dialog compact-dialog"; editor.setAttribute("aria-labelledby","recipeEditorTitle");
   editor.innerHTML = `<div class="dialog-head"><h2 id="recipeEditorTitle">Rezept anlegen</h2>
-    <button type="button" class="btn small" data-close>Schließen</button></div>
+    <button type="button" class="btn small" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
     <form class="stack-form"><label>Getränkename<input name="name" required maxlength="80"></label>
       <div class="bar-fields"><label>Kategorie<select name="category"></select></label>
       <label>Glas<select name="glass"></select></label></div>

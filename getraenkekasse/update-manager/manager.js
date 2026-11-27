@@ -169,8 +169,18 @@ async function recover() {
   }
   await fs.rm(journal,{force:true});
 }
+function unavailable(req,res,message) {
+  res.status(503).set("Retry-After","3");
+  if (req.method !== "GET" || req.path.startsWith("/api/") || !req.get("Accept")?.includes("text/html"))
+    return res.send(message);
+  res.set("Cache-Control","no-store").type("html").send(`<!doctype html><html lang="de"><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#14120d"><script src="/updates/theme.js"></script>
+    <title>Kassenstatus · Bierwart</title><link rel="stylesheet" href="/updates/design.css"><link rel="stylesheet" href="/updates/page.css"></head>
+    <body><header></header>
+    <main><h1>Kassenstatus</h1><section><p role="status">${message}</p><div class="row"><a href="">Erneut laden</a><a href="/updates/">Software-Updates öffnen</a></div></section></main></body></html>`);
+}
 function relay(req,res) {
-  if (maintenance || !worker?.port) return res.status(503).set("Retry-After","3").send("Die Getränkekasse startet. Bitte gleich erneut versuchen.");
+  if (maintenance || !worker?.port) return unavailable(req,res,"Die Getränkekasse startet. Bitte gleich erneut versuchen.");
   const port=worker.port;
   const headers={...req.headers, host:"127.0.0.1:"+port,connection:"close"};
   if (headers.origin) headers.origin="http://"+headers.host;
@@ -182,7 +192,7 @@ function relay(req,res) {
   });
   requests++;
   upstream.once("close",()=>{ requests--; });
-  upstream.once("error",()=>{ if (!res.headersSent) res.status(503).send("Kasse vorübergehend nicht erreichbar."); else res.destroy(); });
+  upstream.once("error",()=>{ if (!res.headersSent) unavailable(req,res,"Kasse vorübergehend nicht erreichbar."); else res.destroy(); });
   req.once("aborted",()=>upstream.destroy());
   res.once("close",()=>{if (!req.complete) upstream.destroy();});
   req.pipe(upstream);
@@ -217,6 +227,9 @@ async function main() {
   const app=express(); app.disable("x-powered-by"); app.use(access);
   app.use("/updates",(req,res,next)=>{ res.set({"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","Content-Security-Policy":"default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'"}); next(); });
   app.get(["/updates","/updates/"],(req,res)=>res.sendFile(path.join(__dirname,"page.html")));
+  for (const asset of ["design.css", "theme.js"]) {
+    app.get("/updates/" + asset, (req, res) => res.sendFile(path.join(root, "public", asset)));
+  }
   for(const f of ["page.js","page.css"]) app.get("/updates/"+f,(req,res)=>res.sendFile(path.join(__dirname,f)));
   app.use("/updates/api",async(req,res,next)=>{
     const configured=String(process.env.BW_ADMIN_PIN || cfg.adminPin || "").trim();

@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="de"><head><meta charset="utf-8"><meta name="theme-color" content="#14120d"><script src="theme.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Veranstaltungen – Bierwart</title><link rel="stylesheet" href="style.css"></head>
 <body class="kiosk">
-<header class="app"><h1>Veranstaltungen</h1>
-<nav class="pagenav" aria-label="Kasse"><a href="strichliste.html">Strichliste</a><a href="veranstaltung.html" aria-current="page">Veranstaltungen</a></nav></header>
+<header class="app">
+<nav class="pagenav" aria-label="Kasse"><a href="strichliste.html" class="area-link" aria-label="Strichliste" title="Strichliste"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tally-5"></use></svg><span class="area-caption">Strichliste</span></a><a href="veranstaltung.html" aria-current="page" class="area-link" aria-label="Veranstaltungen" title="Veranstaltungen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#calendar-days"></use></svg><span class="area-caption">Veranstaltungen</span></a></nav></header>
 <main><section id="pick">
-  <div class="section-head"><h2>Veranstaltung auswählen</h2><button class="btn" id="btnNewEv">Veranstaltung anlegen</button></div>
-  <div id="events"></div>
+  <div class="section-head"><h1 class="page-title">Veranstaltungen</h1><button class="btn" id="btnNewEv">Veranstaltung anlegen</button></div>
+  <div id="events"><p role="status">Veranstaltungen werden geladen …</p></div>
 </section>
 <section id="book" hidden>
-  <div class="section-head"><div><h2 id="evName"></h2><div class="tally" id="evTally"></div></div>
+  <div class="section-head"><div><h1 class="page-title" id="evName"></h1><div class="tally" id="evTally"></div></div>
     <div class="row"><button class="btn" id="btnBarCard">Getränkekarte</button><button class="btn" id="btnEventDrinks">Temporäre Getränke</button></div></div>
   <div class="drink-grid" id="prodGrid"></div>
   <div class="order-bar"><span>Summe <strong id="evSum"></strong></span><div class="order-actions">
@@ -17,9 +17,9 @@
   </div></div>
   <a class="back-link" href="veranstaltung.html">← Andere Veranstaltung</a>
 </section></main>
-<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html">Mein Konto</a><a href="admin.html">Verwaltung</a></nav>
+<nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#wallet"></use></svg>Mein Konto</a><a href="admin.html"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#shield-check"></use></svg>Verwaltung</a></nav>
 <dialog class="bw-dialog compact-dialog" id="sheet" aria-labelledby="event-title">
-  <div class="dialog-head"><h2 id="event-title">Veranstaltung anlegen</h2><button class="btn small ghost" data-close>Schließen</button></div>
+  <div class="dialog-head"><h2 id="event-title">Veranstaltung anlegen</h2><button class="btn small ghost" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
   <p class="muted">Die Veranstaltung steht eine Woche zur Auswahl.</p>
   <div class="row" id="kindChips" aria-label="Namensvorschläge"></div>
   <form class="stack-form"><label>Name<input id="evNewName" maxlength="120" required placeholder="z. B. Fuxenkneipe"></label>
@@ -106,7 +106,10 @@ form.onsubmit = async e => {
     location.assign("veranstaltung.html?event=" + encodeURIComponent(event.id));
   } catch (error) { BW.toast(error.message); submit.disabled = false; }
 };
-load().catch(e => BW.toast(e.message));
+function refreshEvents() {
+  load().catch(e => BW.retryMessage($("events"),e.message,refreshEvents));
+}
+refreshEvents();
 setInterval(() => {
   if (!document.hidden && !order.busy && !order.selected && !document.querySelector("dialog[open]"))
     load().catch(e => BW.toast(e.message));

@@ -1,4 +1,4 @@
-// Derselbe Gerätetyp bestimmt den Einstieg und die Darstellung des persönlichen Kontos.
+// Derselbe Gerätetyp bestimmt den Einstieg beim automatischen Seitenwechsel.
 function bierwartDevice() {
   const ua = navigator.userAgent;
   if (/iPad/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1)) return "tablet";

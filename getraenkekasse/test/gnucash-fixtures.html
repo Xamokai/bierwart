@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GnuCash · lokale Testdaten</title><link rel="icon" href="data:,"><script src="theme.js"></script><link rel="stylesheet" href="style.css">
+<style>
+body{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100vh;height:100dvh}
+main{width:100%;max-width:64rem;overflow:auto}
+nav{display:flex;overflow:auto;gap:.6rem;background:var(--surface);padding:.5rem}
+nav a{white-space:nowrap}nav [aria-current]{font-weight:bold}
+</style></head><body><main><h1>GnuCash</h1><div id="work"></div></main><nav aria-label="Testdaten"></nav>
+<script src="display.js"></script><script src="ui.js"></script><script src="gnucash-workbench.js"></script>
+<script>
+const labels = {demo:"Demo",worst:"Extremfall",empty:"Leer",one:"Eine Buchung",many:"1.001 Buchungen"};
+const key = new URLSearchParams(location.search).get("data") || "demo";
+for (const [value,label] of Object.entries(labels)) {
+  const a = document.createElement("a"); a.href="?data="+value; a.textContent=label;
+  if(value===key)a.setAttribute("aria-current","page");
+  document.querySelector("nav").append(a);
+}
+const standard = {description:"Getränkeeinkauf",date:"2026-11-26",amount:48.5,account:"Aufwand:Wareneinkauf",counterAccount:"Aktiva:Barkasse",number:"WS26 K12"};
+const edge = [
+  {...standard,description:"Erstattung der Getränke für die Semesterantrittsveranstaltung mit der Altherrenschaft",account:"Aktiva:Umlaufvermögen:Forderungen:Mitglieder:Aleksandra Wiśniewska-Kowalczyk",number:"WS26-Abrechnung-Semesterantrittsveranstaltung-12",amount:-1234567.89},
+  {...standard,description:"Öffentlichkeitsarbeitsausschusssitzung",number:"",amount:.01},
+  {...standard,description:"Đặng Thị Ngọc Hân",number:"",amount:1},
+  {...standard,description:"J",exported:true,locked:true,runNumber:"WS26 K19"}
+];
+const sample = key==="empty"?[]:key==="worst"?edge:key==="many"?Array.from({length:1001},(_,i)=>edge[i%edge.length]):key==="one"?[edge[0]]:[standard,{...standard,description:"Wechselgeld",number:""}];
+const ledger = sample.map((row,i)=>({...row,id:"probe-"+i}));
+const pending = {purchases:0,deposits:0,meals:0,ledger:ledger.length,total:ledger.reduce((s,r)=>s+r.amount,0)};
+const settings = {expenseAccount:standard.account,cashAccount:standard.counterAccount};
+window.fetch = async (url,opts={}) => {
+  const route = new URL(url,location.href).pathname;
+  const data = {"/api/admin/export-runs":{pending,runs:[],open:null},"/api/admin/ledger":ledger,
+    "/api/admin/gnucash/settings":{settings},"/api/admin/collectives":[],"/api/admin/gnucash/accounts":[]};
+  const allowed = (!opts.method || opts.method==="GET") && Object.hasOwn(data,route);
+  return new Response(JSON.stringify(allowed?data[route]:{error:"Lokale Testansicht"}),{status:allowed?200:405,headers:{"Content-Type":"application/json"}});
+};
+mountGnucashWorkbench(document.getElementById("work"),()=>({}));
+</script></body></html>

@@ -82,3 +82,36 @@ function groupEventsByTheme(events) {
   }
   return [...groups].filter(([, entries]) => entries.length);
 }
+
+function appendAccountHistory(body,tx,eur) {
+  if (!tx.length) {
+    body.insertAdjacentHTML("beforeend",'<p class="muted">Keine Buchungen.</p>');
+    return;
+  }
+  const bySem = {};
+  tx.forEach(t => { const s = semesterOf(t.date); (bySem[s] = bySem[s] || []).push(t); });
+  const curSem = semesterOf(new Date().toISOString());
+  Object.entries(bySem).forEach(([sem, stx]) => {
+    const semSum = stx.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
+    const semDet = document.createElement("details");
+    semDet.className = "daygroup semgroup";
+    if (sem === curSem) semDet.open = true;
+    semDet.innerHTML = `<summary><span>${sem}</span>
+      <span class="${semSum >= 0 ? "amount-pos" : "amount-neg"}">${semSum >= 0 ? "+" : "−"}${eur(Math.abs(semSum))}</span></summary>
+      <div class="body"></div>`;
+    const semBody = semDet.querySelector(".body");
+    body.appendChild(semDet);
+    const byDay = {};
+    stx.forEach(t => { const d = t.date.slice(0, 10); (byDay[d] = byDay[d] || []).push(t); });
+    Object.entries(byDay).forEach(([day, list]) => {
+      const sum = list.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
+      semBody.insertAdjacentHTML("beforeend", `
+        <div class="list-item"><strong class="gold-text">${new Date(day).toLocaleDateString("de-DE")}</strong>
+          <span class="${sum >= 0 ? "amount-pos" : "amount-neg"}">${sum >= 0 ? "+" : "−"}${eur(Math.abs(sum))}</span></div>
+        ${list.map(t => `<div class="list-item" style="padding-left:18px">
+          <span>${displayText(t.description)} <span class="muted">${t.date.slice(11, 16)} Uhr${t.exported ? " · exportiert" : ""}</span></span>
+          ${transactionAmount(t,eur)}
+        </div>`).join("")}`);
+    });
+  });
+}

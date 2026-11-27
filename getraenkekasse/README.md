@@ -1,4 +1,4 @@
-# Bierwart · Getränkekasse 1.12.0
+# Bierwart · Getränkekasse 1.13.0
 
 Die Strichliste läuft auf **einem Rechner im Hausnetz**. Mitglieder, Bierwarte und Kassenwart öffnen sie im Browser. GnuCash kann auf einem anderen Rechner laufen. Der Austausch über die CSV-Assistenten und den Bereich **GnuCash Import / Export** ist ebenfalls verfügbar.
 
@@ -21,7 +21,7 @@ Der Dienst bindet an die gewählte IPv4-Adresse und prüft die Quelladresse anha
 
 ## Konten und Startpasswort
 
-Bei der Anlage Anzeigename und Nachname eingeben. „Lisa von Muster“ kann als Nachnamen ausdrücklich „von Muster“ erhalten. Das Startpasswort entspricht exakt diesem Nachnamen, einschließlich Leerzeichen und Großschreibung. Bei der Übernahme einer alten Namensliste wird bei „Muster, Lisa“ der Teil vor dem Komma und bei „Lisa Muster“ das letzte Wort verwendet. Mehrteilige Nachnamen im Zweifel über die normale Anlage erfassen.
+Bei der Anlage den Anzeigenamen wie in GnuCash eingeben, zum Beispiel „Muster, Max“. In das Feld „Nachname (Startpasswort)“ gehört dann „Muster“. Das Startpasswort entspricht exakt diesem Nachnamen, einschließlich Leerzeichen und Großschreibung. Bei der Übernahme einer alten Namensliste wird bei „Muster, Max“ der Teil vor dem Komma und bei „Max Muster“ das letzte Wort verwendet. Mehrteilige Nachnamen im Zweifel über die normale Anlage erfassen.
 
 In **Mein Konto** erscheint nach dem Login oben ein Hinweis. **Passwort ändern** öffnet das Formular. **Später** blendet den Hinweis für diese Anmeldung aus. Alle übrigen Funktionen bleiben bedienbar. Nach dem tatsächlichen Wechsel verschwindet der Hinweis auch bei späteren Anmeldungen. Bestehende selbst gesetzte Passwörter bleiben beim Update gültig.
 
@@ -63,3 +63,11 @@ Ein Serverprozess verwaltet den Bestand in `data/db.json`. Belege liegen in `ass
 Updates und Rückwechsel erfolgen unter **Verwaltung → Software-Updates**. Die einmalige Einrichtung, der direkte Zugang für ältere Versionen und die Releasedokumentation stehen in [Repository-Updates.md](../Repository-Updates.md). Im Entwurf offen gebliebene alte Buchungsläufe enthalten dessen ursprüngliches CSV-Format. Bereits importierte bestätigen. Noch nicht importierte verwerfen und einen neuen Lauf erzeugen. Das Standardpasswort der früheren Verwaltung wird beim ersten Start durch eine individuelle PIN ersetzt. Der Testbefehl `npm test` arbeitet in einem temporären Testbestand.
 
 Das Transaktionsformat der Vorversion wurde mit GnuCash 5.16 geprüft. Version 1.3 wurde mit GnuCash-XML, der vorhandenen SS26-CSV und einem Konten- und Buchungs-Rundlauf im BW-Programm getestet. Nach einem größeren Versionswechsel zuerst einen kleinen Lauf mit einer Kopie der GnuCash-Datei ausprobieren.
+
+## Oberfläche lokal prüfen
+
+Das Farbschema folgt anfangs dem Gerät. Der Schalter mit Sonne und Mond wechselt zwischen **Hell** und **Dunkel**. Die Auswahl bleibt in diesem Browser auch für Software-Updates gespeichert. Über **Geräte-Farbschema verwenden** im Fußbereich lässt sich die Automatik wiederherstellen. Die [Screenshot-Galerie](../Screenshots/index.html) zeigt die Ansichten auf Smartphone, Kiosk-Tablet und Desktop.
+
+Im Ordner `getraenkekasse` startet `node test/ui-preview.cjs` eine isolierte Beispielkasse auf Port 3182. Unter `/ui-fixtures.html` lassen sich normale Buchungen, ein leerer Verlauf, ein einzelner Eintrag und 1.001 Buchungen mit langen Texten vergleichen. Das Testmitglied heißt **Marlene Hofmann**, sein Passwort lautet **Probe**. Die Testverwaltung verwendet die PIN **246810**. Beim Beenden verwirft der Vorschaudienst seine Daten.
+
+Mit installiertem Playwright für Node und Chromium führt ein zweites Terminal `node test/ui-flows.cjs` aus. Beide Skripte akzeptieren den Port als erstes Argument. Für ein systemweit installiertes Chromium lässt sich der ausführbare Pfad über `CHROMIUM` angeben. Die gemeinsamen Gestaltungsregeln stehen in [DESIGN.md](../DESIGN.md), die CSS-Variablen in [design.css](public/design.css).

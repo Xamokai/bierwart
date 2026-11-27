@@ -13,6 +13,7 @@ function mountOrder({grid, sum, tally, reset, submit, book, onBooked, onRejected
       total += qty;
       tile.add.disabled = busy;
       tile.remove.disabled = busy || !qty;
+      tile.element.classList.toggle("selected",qty > 0);
       tile.badge.hidden = !qty;
       tile.badge.textContent = qty;
       tile.add.setAttribute("aria-label", name + " hinzufügen, " + BW.money(tile.product.price) + ", ausgewählt " + qty);
@@ -79,6 +80,12 @@ function mountOrder({grid, sum, tally, reset, submit, book, onBooked, onRejected
         tiles.set(name, {element, product, add, remove, badge:element.querySelector(".count")});
         grid.append(element);
       }
+    }
+    if (!products.length && !grid.firstChild) {
+      const empty = document.createElement("p");
+      empty.className = "empty-state muted";
+      empty.textContent = "Zurzeit sind keine Getränke verfügbar.";
+      grid.append(empty);
     }
     update();
   }

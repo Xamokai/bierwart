@@ -6,3 +6,5 @@
 /getraenkekasse/update-manager/local-signers
 *.bundle
 *.gnucash
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

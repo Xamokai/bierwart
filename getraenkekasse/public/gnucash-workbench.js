@@ -4,56 +4,48 @@
  *     mountGnucashWorkbench(document.getElementById("gnu"), () => H());
  */
 function mountGnucashWorkbench(root, headers, notify, onImported) {
-  const eur = n => Number(n).toFixed(2).replace(".", ",") + " €";
+  const eur = BW.money;
+  const number = new Intl.NumberFormat("de-DE");
   const toast = notify || (m => console.log(m));
   const H = () => headers();
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   let state = { open: null, pending: null, runs: [], ledger: [], settings: null, editing: null };
 
+  root.classList.add("gnu-workbench");
   root.innerHTML = `
-    <div class="card"><h3 class="gold-text">GnuCash einlesen</h3>
-      <p>Gespeicherte GnuCash-Datei oder CSV-Export auswählen. Personen, Veranstaltungen und Sammelkonten werden anhand des Kontenbaums zugeordnet.</p>
-      <input id="bookFile" type="file" accept=".gnucash,.gnc,.xml,.gz,.csv">
+    <section class="card gnu-import"><div class="gnu-import-head"><div><h3>GnuCash einlesen</h3>
+      <p>Personen, Veranstaltungen und Sammelkonten aus einer GnuCash-Datei oder CSV zuordnen.</p></div>
+      <label>Datei auswählen<input id="bookFile" type="file" accept=".gnucash,.gnc,.xml,.gz,.csv"></label></div>
       <div id="bookRows" aria-live="polite"></div><button class="btn gold" id="bookApply" hidden>Konten und Auswahl übernehmen</button>
-    </div>
-    <div class="card">
-      <h3 style="margin-top:0" class="gold-text">Buchungslauf → GnuCash</h3>
-      <button class="btn" id="accountDownload">Neue BW-Konten als CSV</button>
-      <p class="muted" id="gnuPending">Lade …</p>
+    </section>
+    <section class="card gnu-run"><div class="gnu-section-head"><h3>Buchungslauf für GnuCash</h3>
+      <button class="btn" id="accountDownload">Neue BW-Konten als CSV</button></div>
+      <div id="gnuPending" role="status">Offene Posten werden geladen …</div>
       <div id="gnuOpen"></div>
-      <div class="row">
-        <input id="gnuNumber" aria-label="Belegnummer" placeholder="Belegnummer, z. B. SS26 U1 (optional)" maxlength="48" style="max-width:300px">
-        <label>Verbrauch gesammelt bis <input type="date" id="gnuDate"></label>
+      <div class="gnu-run-fields">
+        <label>Belegnummer (optional)<input id="gnuNumber" placeholder="z. B. SS26 U1" maxlength="48"></label>
+        <label>Verbrauch gesammelt bis<input type="date" id="gnuDate"></label>
         <button class="btn gold" id="gnuNewRun">Buchungslauf erstellen</button>
-        
       </div>
-      <p class="muted" style="margin-bottom:0">Der Lauf friert nur die Buchungen bis zum Klick ein. Wer währenddessen Getränke bucht, stört nicht – das landet automatisch im nächsten Lauf.</p>
-    </div>
-
-    <div class="card">
-      <h3 style="margin-top:0" class="gold-text">Kassenbuch – eigene Buchungen</h3>
-      <p class="muted">Einkäufe, Bankgebühren, Barentnahmen usw. Sie wandern mit demselben Export nach GnuCash.</p>
-      <div class="row" style="align-items:flex-end">
-        <div style="min-width:130px"><label for="lgDate">Datum</label><input type="date" id="lgDate"></div>
-        <div class="grow" style="min-width:180px"><label for="lgDesc">Beschreibung</label><input id="lgDesc" placeholder="z. B. Getränke-Einkauf Großhandel"></div>
-        <div style="min-width:110px"><label for="lgAmount">Betrag (€)</label><input id="lgAmount" placeholder="0,00"></div>
+      <p>Spätere Buchungen fließen in den nächsten Lauf ein.</p>
+    </section>
+    <section class="card gnu-ledger">
+      <h3>Kassenbuch</h3><p>Eigene Buchungen wie Einkäufe, Bankgebühren und Barentnahmen für den GnuCash-Export erfassen.</p>
+      <div class="gnu-ledger-fields">
+        <label>Datum<input type="date" id="lgDate"></label>
+        <label>Beschreibung<input id="lgDesc" placeholder="z. B. Getränkeeinkauf"></label>
+        <label>Betrag (€)<input id="lgAmount" inputmode="decimal" placeholder="0,00"></label>
+        <label>Konto (Soll)<input id="lgAcc" list="gnuAccounts" placeholder="Aufwand:Wareneinkauf"></label>
+        <label>Gegenkonto (Haben)<input id="lgCounter" list="gnuAccounts" placeholder="Aktiva:Barkasse"></label>
+        <label>Belegnummer<input id="lgNo" placeholder="optional"></label>
       </div>
-      <div class="row" style="align-items:flex-end; margin-top:8px">
-        <div class="grow" style="min-width:180px"><label for="lgAcc">Konto (Soll)</label><input id="lgAcc" list="gnuAccounts" placeholder="Aufwand:Wareneinkauf"></div>
-        <div class="grow" style="min-width:180px"><label for="lgCounter">Gegenkonto (Haben)</label><input id="lgCounter" list="gnuAccounts" placeholder="Aktiva:Barkasse"></div>
-        <div style="min-width:120px"><label for="lgNo">Beleg-Nr.</label><input id="lgNo" placeholder="optional"></div>
-        <button class="btn gold" id="lgSave">Buchen</button>
-        <button class="btn" id="lgCancel" style="display:none">Abbrechen</button>
-      </div>
-      <datalist id="gnuAccounts"></datalist>
-      <div id="lgMsg" class="muted" style="margin-top:6px"></div>
-      <div class="table-scroll"><table style="margin-top:12px">
-        <thead><tr><th>Datum</th><th>Beschreibung</th><th>Konto → Gegenkonto</th><th class="right">Betrag</th><th>Status</th><th></th></tr></thead>
-        <tbody id="lgTable"></tbody>
-      </table></div>
-      <label class="row" style="margin-top:10px; text-transform:none"><input type="checkbox" id="lgShowAll" style="width:auto; min-height:auto"> auch bereits exportierte anzeigen</label>
-    </div>
-
+      <div class="gnu-actions"><button class="btn gold" id="lgSave">Buchen</button><button class="btn" id="lgCancel" style="display:none">Abbrechen</button></div>
+      <datalist id="gnuAccounts"></datalist><div id="lgMsg" role="status"></div>
+      <div class="gnu-section-head gnu-list-head"><h4>Buchungen</h4>
+        <label class="gnu-check"><input type="checkbox" id="lgShowAll">Exportierte anzeigen</label></div>
+      <div class="table-scroll"><table class="gnu-table"><thead><tr><th>Datum</th><th>Beschreibung</th><th>Konto → Gegenkonto</th><th class="right">Betrag</th><th>Status</th><th></th></tr></thead>
+        <tbody id="lgTable"></tbody></table></div>
+    </section>
     <details class="daygroup">
       <summary><strong>Sammelkonten der Strichliste</strong></summary>
       <form class="body stack-form" id="collectiveForm">
@@ -66,16 +58,16 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
     </details>
 
     <details class="daygroup">
-      <summary><strong>Kontenzuordnung (GnuCash-Kontopfade)</strong><span class="muted">▾</span></summary>
+      <summary><strong>Kontenzuordnung (GnuCash-Kontopfade)</strong></summary>
       <div class="body" id="gnuSettings"></div>
-      <div class="body"><label for="bwPerson">BW-Konto</label><select id="bwPerson"></select>
+      <div class="body gnu-mapping"><div class="gnu-settings-grid"><div><label for="bwPerson">BW-Konto</label><select id="bwPerson"></select></div><div>
       <label for="bwPath">Vollständiger GnuCash-Kontopfad (einschließlich Kontonummer im Namen)</label>
-      <input id="bwPath"><button class="btn" id="bwMap">Zuordnung speichern</button></div>
+      <input id="bwPath"></div></div><button class="btn" id="bwMap">Zuordnung speichern</button></div>
     </details>
 
     <details class="daygroup">
-      <summary><strong>Frühere Buchungsläufe</strong><span class="muted">▾</span></summary>
-      <div class="body table-scroll"><table><thead><tr><th>Nummer</th><th>Erstellt</th><th>Status</th><th class="right">Summe</th><th></th></tr></thead><tbody id="gnuRuns"></tbody></table></div>
+      <summary><strong>Frühere Buchungsläufe</strong></summary>
+      <div class="body table-scroll"><table class="gnu-table"><thead><tr><th>Nummer</th><th>Erstellt</th><th>Status</th><th class="right">Summe</th><th></th></tr></thead><tbody id="gnuRuns"></tbody></table></div>
     </details>`;
 
   const $ = id => root.querySelector("#" + id);
@@ -141,12 +133,14 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
     const d = await api("/api/admin/export-runs");
     state.open = d.open; state.pending = d.pending; state.runs = d.runs;
     const p = d.pending;
-    $("gnuPending").innerHTML = p.purchases + p.deposits + p.meals + p.ledger === 0
-      ? "Keine weiteren Posten für einen neuen Lauf."
-      : `Offen: <strong>${p.purchases}</strong> Getränke-/Veranstaltungsbuchungen, <strong>${p.deposits}</strong> Bareinzahlungen, <strong>${p.ledger}</strong> Kassenbuch-Buchungen, <strong>${p.meals}</strong> Aktivenessen · Summe <strong class="gold-text">${eur(p.total)}</strong>`;
+    const groups = [["Getränke / Veranstaltungen",p.purchases],["Bareinzahlungen",p.deposits],["Kassenbuch",p.ledger],["Aktivenessen",p.meals]];
+    $("gnuPending").innerHTML = groups.every(([,count]) => !count)
+      ? "<p>Keine weiteren Posten für einen neuen Lauf.</p>"
+      : `<div class="gnu-total"><span>Summe offener Posten</span><strong>${eur(p.total)}</strong></div>
+        <dl class="gnu-counts">${groups.map(([label,count]) => "<div><dt>"+label+"</dt><dd>"+number.format(count)+"</dd></div>").join("")}</dl>`;
 
     $("gnuOpen").innerHTML = d.open ? `
-      <div class="card" style="background:var(--bg)">
+      <div class="gnu-open-run">
         <strong>Offener Lauf ${esc(d.open.number)}</strong>
         <div class="muted">${d.open.counts.rows} Zeilen · ${eur(d.open.total)} · erstellt ${new Date(d.open.createdAt).toLocaleString("de-DE")} von ${esc(d.open.createdBy || "?")}</div>
         <div class="row" style="margin-top:10px">
@@ -162,11 +156,11 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
 
 
     $("gnuRuns").innerHTML = d.runs.map(r => `
-      <tr><td>${esc(r.number)}</td>
-      <td class="muted">${new Date(r.createdAt).toLocaleString("de-DE")}</td>
-      <td>${r.status === "committed" ? "gebucht" : r.status === "open" ? "offen" : "verworfen"}</td>
-      <td class="right">${eur(r.total)}</td>
-      <td>${r.status === "discarded" ? "" : `<button class="btn small" data-dl="${r.id}" data-nr="${esc(r.number)}">CSV</button>`}</td></tr>`).join("")
+      <tr><td data-label="Nummer">${esc(r.number)}</td>
+      <td data-label="Erstellt" class="muted">${new Date(r.createdAt).toLocaleString("de-DE")}</td>
+      <td data-label="Status">${r.status === "committed" ? "gebucht" : r.status === "open" ? "offen" : "verworfen"}</td>
+      <td data-label="Summe" class="right">${eur(r.total)}</td>
+      <td class="gnu-row-actions">${r.status === "discarded" ? "" : `<button class="btn small" data-dl="${r.id}" data-nr="${esc(r.number)}">CSV</button>`}</td></tr>`).join("")
       || '<tr><td colspan="5" class="muted">Noch keine Läufe.</td></tr>';
 
     root.querySelectorAll("[data-accounts]").forEach(b=>b.onclick=()=>download("/api/admin/export-runs/"+b.dataset.accounts+"/accounts.csv","BW-Neue-Konten.csv"));
@@ -227,14 +221,14 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
     state.ledger = await api(`/api/admin/ledger?all=${all}`);
     $("lgTable").innerHTML = state.ledger.map(e => `
       <tr>
-        <td class="muted">${e.date}</td>
-        <td>${esc(e.description)}${e.number ? ` <span class="muted">(${esc(e.number)})</span>` : ""}</td>
-        <td class="muted">${esc(e.account)} → ${esc(e.counterAccount)}</td>
-        <td class="right">${eur(e.amount)}</td>
-        <td class="muted">${e.exported ? "gebucht " + (e.runNumber || "") : e.runId ? "im Lauf " + (e.runNumber || "") : "offen"}</td>
-        <td style="white-space:nowrap">${e.locked ? "" :
+        <td data-label="Datum" class="muted">${esc(e.date)}</td>
+        <td data-label="Beschreibung"><span>${esc(e.description)}${e.number ? ` <span class="muted">(${esc(e.number)})</span>` : ""}</span></td>
+        <td data-label="Soll → Haben" class="muted">${esc(e.account)} → ${esc(e.counterAccount)}</td>
+        <td data-label="Betrag" class="right">${eur(e.amount)}</td>
+        <td data-label="Status" class="muted">${e.exported ? "gebucht " + esc(e.runNumber || "") : e.runId ? "im Lauf " + esc(e.runNumber || "") : "offen"}</td>
+        <td class="gnu-row-actions">${e.locked ? "" :
           `<button class="btn small" data-led-edit="${e.id}">Ändern</button>
-           <button class="btn small" data-led-del="${e.id}">✕</button>`}</td>
+           <button class="btn small danger-action" data-led-del="${e.id}">Löschen</button>`}</td>
       </tr>`).join("") || '<tr><td colspan="6" class="muted">Keine Buchungen.</td></tr>';
 
     root.querySelectorAll("[data-led-edit]").forEach(b => b.onclick = () => {
@@ -245,6 +239,7 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
       $("lgAcc").value = e.account; $("lgCounter").value = e.counterAccount; $("lgNo").value = e.number || "";
       $("lgSave").textContent = "Änderung speichern";
       $("lgCancel").style.display = "";
+      $("lgDesc").focus();
     });
     root.querySelectorAll("[data-led-del]").forEach(b => b.onclick = async () => {
       if (!confirm("Buchung löschen?")) return;
@@ -271,10 +266,8 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
     state.settings = d.settings;
     $("gnuSettings").innerHTML = `
       <p class="muted">Vollständige Pfade aus eurem GnuCash-Kontenbaum verwenden. Eine individuelle Zuordnung unten hat Vorrang. Der Dateiimport ordnet passende Personen und Veranstaltungen automatisch zu.</p>
-      ${FIELDS.map(([k, label]) => `
-        <label for="gs_${k}">${label}</label>
-        <input id="gs_${k}" value="${esc(d.settings[k])}" style="margin-bottom:10px">`).join("")}
-      <label class="row" style="text-transform:none"><input type="checkbox" id="gs_useMemberPrefix" ${d.settings.useMemberPrefix ? "checked" : ""} style="width:auto; min-height:auto"> Mitgliedsnamen unter dem Präfix als Unterkonto führen</label>
+      <div class="gnu-settings-grid">${FIELDS.map(([k, label]) => `<label>${label}<input id="gs_${k}" value="${esc(d.settings[k])}"></label>`).join("")}</div>
+      <label class="gnu-check"><input type="checkbox" id="gs_useMemberPrefix" ${d.settings.useMemberPrefix ? "checked" : ""} style="width:auto; min-height:auto"> Mitgliedsnamen unter dem Präfix als Unterkonto führen</label>
       <button class="btn gold" id="gsSave" style="margin-top:10px">Speichern</button>`;
     $("gnuAccounts").innerHTML = [d.settings.revenueDrinks, d.settings.eventAccount, d.settings.cashAccount, d.settings.bankAccount, d.settings.expenseAccount]
       .map(v => `<option value="${esc(v)}">`).join("");
@@ -328,7 +321,7 @@ function mountGnucashWorkbench(root, headers, notify, onImported) {
       for(const kind of ["bw","meal","ledger","payment"]){
         const rows=d.candidates.filter(e=>e.kind===kind);if(!rows.length)continue;
         html+=`<details><summary>${typeNames[kind]} (${rows.length})</summary>${kind!=="payment"?`<label><input type="checkbox" data-all="${kind}" style="width:auto"> Alle in dieser Gruppe</label>`:""}`+
-          rows.map(e=>`<label><input type="checkbox" data-kind="${kind}" data-book="${esc(e.key)}" style="width:auto"> ${esc(e.date)} · ${esc(e.number)} · ${esc(e.description)} ${esc(e.name||"")} · ${eur(e.amount/100)}</label>`).join("")+"</details>";
+          rows.map(e=>`<label class="gnu-candidate"><input type="checkbox" data-kind="${kind}" data-book="${esc(e.key)}"><span><small>${[e.date,e.number].filter(Boolean).map(esc).join(" · ")}</small>${[e.description,e.name].filter(Boolean).map(esc).join(" · ")}</span><strong>${eur(e.amount/100)}</strong></label>`).join("")+"</details>";
       }
       const balances = d.balances || [];
       const differences = balances.filter(a => a.target !== a.current);
