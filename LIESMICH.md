@@ -1,4 +1,4 @@
-# Bierwart LAN 1.13.1
+# Bierwart LAN 1.13.2
 
 ## Update einspielen
 
@@ -7,6 +7,8 @@
 3. Beim ersten Abgleich mit einer neuen Kasse den Kontenbaum in der Vorschau übernehmen. Das geht bereits mit der Verwaltungs-PIN und ohne angelegte Personen. Eine automatisch erzeugte PIN steht auf dem Server in `data/admin-pin`. Bei einer selbst konfigurierten PIN dieselbe wie für die BW-Verwaltung verwenden.
 
 ## Einstieg auf Handy, Tablet und PC
+
+Mit v1.13.2 lässt sich die Kasse zusätzlich per HTTPS erreichen, einschließlich der Update-Seite. Die Einrichtung für den Hausserver und den Zugriff unter `https://bw.uhaus/` steht unter [HTTPS im Hausnetz](getraenkekasse/README.md#https-im-hausnetz).
 
 Die normale BW-Adresse öffnet auf dem Handy **Mein Konto**, auf dem Tablet die **Strichliste** und am PC die **Verwaltung**. Eine bestehende Anmeldung wird verwendet. Über die Bereichslinks lässt sich jederzeit wechseln. Für ein festes Lesezeichen stehen `/strichliste.html`, `/veranstaltung.html`, `/user.html` und `/admin.html` zur Verfügung. Auch bisherige Strichlisten- und Veranstaltungslinks funktionieren weiter.
 

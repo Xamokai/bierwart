@@ -6,7 +6,7 @@ const os = require("node:os");
 const path = require("node:path");
 const {spawn} = require("node:child_process");
 const {once} = require("node:events");
-const {lanConfig} = require("../lan");
+const {lanConfig,listenLan} = require("../lan");
 const {renderTransactions} = require("../gnucash-sync");
 const {readBook, splitCents} = require("../book-format");
 const { PDFDocument } = require("pdf-lib");
@@ -14,14 +14,25 @@ const root = path.resolve(__dirname,"..");
 
 test("Lokale Schnittstelle und Netzmaske", () => {
   assert.throws(()=>lanConfig("0.0.0.0"));
-  const allow = lanConfig("192.168.9.3",{lan:[{family:"IPv4",address:"192.168.9.3",netmask:"255.255.255.0"}]});
-  const status = ip => {
+  const interfaces = {lan:[{family:"IPv4",address:"192.168.9.3",netmask:"255.255.255.0"}]};
+  const allow = lanConfig("192.168.9.3",interfaces,"bw.uhaus");
+  const status = (ip,host="192.168.9.3:3000") => {
     let result;
-    allow({socket:{remoteAddress:ip},headers:{host:"192.168.9.3:3000"}},{status(n){result=n;return this},send(){}},()=>result=200);
+    allow({socket:{remoteAddress:ip},headers:{host}},{status(n){result=n;return this},send(){}},()=>result=200);
     return result;
   };
   assert.equal(status("192.168.9.10"),200);
   assert.equal(status("192.168.10.10"),403);
+  assert.equal(status("192.168.9.10","bw.uhaus"),200);
+  assert.equal(status("192.168.10.10","bw.uhaus"),403);
+  assert.equal(status("192.168.9.10","anderer-name.uhaus"),403);
+  assert.throws(()=>lanConfig("192.168.9.3",interfaces,"*.uhaus"),/DNS-Name/);
+});
+
+test("Unvollständige HTTPS-Konfiguration meldet einen Startfehler", async () => {
+  const start = config => listenLan(()=>{},"127.0.0.1",8080,config,root);
+  await assert.rejects(start({certFile:"cert.pem"}), /keyFile/);
+  await assert.rejects(start({certFile:"cert.pem",keyFile:"key.pem",port:8080}), /HTTPS-Port/);
 });
 async function startTestServer(t, db) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(),".bierwart-test-"));

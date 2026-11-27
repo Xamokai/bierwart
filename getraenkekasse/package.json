@@ -1,6 +1,6 @@
 {
   "name": "getraenkekasse",
-  "version": "1.13.1",
+  "version": "1.13.2",
   "description": "Interne Getränkekasse mit Aktivenessen, internem Ausgleich und Änderungsprotokoll",
   "main": "server.js",
   "scripts": {

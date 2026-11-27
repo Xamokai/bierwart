@@ -16,10 +16,12 @@ const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, "config.json"), "utf8"
 const {mountExchange,prepareAccounts,statementCoverage,statementBalance,changeInCents}=require("./book-exchange");
 const {accountsCsv}=require("./book-format");
 const {codeOf, leaf} = require("./book-sync");
-const { lanConfig } = require("./lan");
+const {lanConfig,listenLan,logListeners} = require("./lan");
 const { entryId, renderTransactions, paymentsFromBook } = require("./gnucash-sync");
 const host = process.env.BW_HOST || CONFIG.host || "127.0.0.1";
-const localOnly = lanConfig(host);
+// The update manager terminates TLS and starts its worker on loopback over HTTP.
+const httpsConfig = require.main === module ? CONFIG.https : null;
+const localOnly = lanConfig(host,undefined,httpsConfig?.hostname);
 function adminPin() {
   const configured = String(process.env.BW_ADMIN_PIN || CONFIG.adminPin || "").trim();
   if (configured && configured !== "1234") return configured;
@@ -2049,4 +2051,7 @@ app.post(pluginApi+"/confirm-accounts",allow("gnucash"),pluginBook,(req,res)=>{
   saveDB(db);res.json({ok:true});
 });
 const port = Number(process.env.BW_PORT || CONFIG.port || 3000);
-const listener = app.listen(port, host, () => console.log(`Getränkekasse: http://${host}:${listener.address().port}`));
+listenLan(app,host,port,httpsConfig,ROOT).then(logListeners).catch(err => {
+  console.error("Getränkekasse konnte nicht starten:",err.message);
+  process.exit(1);
+});

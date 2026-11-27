@@ -54,17 +54,23 @@ class ReleaseUpdates(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, contextlib.ExitStack() as resources:
             work=Path(tmp)
             app=work/'app'
-            shutil.copytree(APP,app,ignore=shutil.ignore_patterns('node_modules','.bierwart','local-signers'))
+            def skip_local(directory, names):
+                if Path(directory)==APP:
+                    return {'node_modules','.bierwart','config.json','data','assets'}
+                return {'local-signers'}
+            shutil.copytree(APP,app,ignore=skip_local)
             (app/'node_modules').symlink_to(APP/'node_modules',target_is_directory=True)
-            # Simulate fresh launches with the ZIP's sample data and isolated ports.
-            with socket.socket() as sock:
+            run('node','update-manager/init.js',cwd=app)
+            with socket.socket() as sock, socket.socket() as secure_sock:
                 sock.bind(('127.0.0.1',0)); port=sock.getsockname()[1]
-            base='http://127.0.0.1:'+str(port)
+                secure_sock.bind(('127.0.0.1',0)); secure_port=secure_sock.getsockname()[1]
+            http_base='http://127.0.0.1:'+str(port)
+            https_base='https://127.0.0.1:'+str(secure_port)
             pin='831624'
-            def api(endpoint,body=None,admin=pin):
+            def api(endpoint,body=None,admin=pin,base=https_base):
                 data=None if body is None else json.dumps(body).encode()
-                req=urllib.request.Request(base+endpoint,data=data,headers={'Content-Type':'application/json','X-Admin-Pin':admin})
-                with urllib.request.urlopen(req,timeout=10) as response:
+                req=urllib.request.Request(base+endpoint,data=data,headers={'Content-Type':'application/json','X-Admin-Pin':admin,'Origin':base})
+                with urllib.request.urlopen(req,timeout=10,context=client_tls) as response:
                     raw=response.read().decode()
                     return json.loads(raw) if raw and response.headers.get_content_type()=='application/json' else raw
             def status():
@@ -85,8 +91,13 @@ class ReleaseUpdates(unittest.TestCase):
             run('ssh-keygen','-q','-t','ed25519','-N','','-f',str(key))
             (app/'update-manager/local-signers').write_text('test '+key.with_suffix('.pub').read_text())
             cert=work/'cert.pem'
-            run('openssl','req','-x509','-newkey','rsa:2048','-nodes','-days','1','-subj','/CN=localhost',
-                '-addext','subjectAltName=IP:127.0.0.1','-keyout',str(work/'tls.key'),'-out',str(cert))
+            run('openssl','req','-x509','-newkey','rsa:2048','-nodes','-days','1','-subj','/CN=bw.uhaus',
+                '-addext','subjectAltName=DNS:bw.uhaus,IP:127.0.0.1','-keyout',str(work/'tls.key'),'-out',str(cert))
+            client_tls=ssl.create_default_context(cafile=str(cert))
+            config=app/'config.json'
+            cfg=json.loads(config.read_text())
+            cfg['https']={'port':secure_port,'hostname':'bw.uhaus','certFile':'../cert.pem','keyFile':'../tls.key'}
+            config.write_text(json.dumps(cfg))
             projects=work/'repos'; projects.mkdir()
             repo=projects/'bierwart.git'
             run('git','init','-q',str(repo))
@@ -129,6 +140,16 @@ class ReleaseUpdates(unittest.TestCase):
                 self.fail((work/'server.log').read_text())
             start()
             self.assertIn('Software-Updates',api('/updates/'))
+            self.assertEqual(api('/api/products',base=http_base),api('/api/products'))
+            self.assertIn('Verwaltung',api('/admin.html'))
+            # One real hostname-verified TLS request, without depending on LAN DNS.
+            with socket.create_connection(('127.0.0.1',secure_port),timeout=5) as connection:
+                with client_tls.wrap_socket(connection,server_hostname='bw.uhaus') as secure:
+                    secure.sendall(f'GET /strichliste.html HTTP/1.1\r\nHost: bw.uhaus:{secure_port}\r\nConnection: close\r\n\r\n'.encode())
+                    reply=http.client.HTTPResponse(secure)
+                    reply.begin()
+                    self.assertEqual(reply.status,200)
+                    self.assertIn(b'Strichliste',reply.read())
             with self.assertRaises(urllib.error.HTTPError) as forbidden: api('/updates/api/repo',{'repo':repo_url},admin='wrong')
             self.assertEqual(forbidden.exception.code,401)
             with self.assertRaises(urllib.error.HTTPError): action('repo',{'repo':'file:///tmp/repository'})
@@ -145,6 +166,7 @@ class ReleaseUpdates(unittest.TestCase):
             def balance():
                 return next(a for a in api('/api/admin/accounts') if a['id']==member['id'])['balance']
             self.assertEqual(balance(),17.25)
+            self.assertEqual(api('/api/admin/accounts',base=http_base),api('/api/admin/accounts'))
             receipt=app/'assets/receipts/beleg.txt';receipt.write_text('Beleg')
             lower=remote('v1.10.1');self.assertEqual(lower['job']['phase'],'done',lower)
             self.assertEqual(balance(),17.25);self.assertEqual(receipt.read_text(),'Beleg')

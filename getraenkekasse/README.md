@@ -1,4 +1,4 @@
-# Bierwart · Getränkekasse 1.13.1
+# Bierwart · Getränkekasse 1.13.2
 
 Die Strichliste läuft auf **einem Rechner im Hausnetz**. Mitglieder, Bierwarte und Kassenwart öffnen sie im Browser. GnuCash kann auf einem anderen Rechner laufen. Der Austausch über die CSV-Assistenten und den Bereich **GnuCash Import / Export** ist ebenfalls verfügbar.
 
@@ -18,6 +18,30 @@ Die Strichliste läuft auf **einem Rechner im Hausnetz**. Mitglieder, Bierwarte 
 | `http://192.168.1.25:3000/admin.html` | Verwaltung mit der PIN vom Server |
 
 Der Dienst bindet an die gewählte IPv4-Adresse und prüft die Quelladresse anhand der Netzmaske. Im Browser die eingetragene IP verwenden. Für eine lokale Firewall TCP-Port 3000 ausschließlich aus diesem Subnetz zulassen. Portweiterleitungen, öffentliche Proxys und Tunnel ausgeschaltet lassen. Direkter HTTP-Zugriff überträgt Anmeldedaten unverschlüsselt. Das vorgesehene Netz ist das vertrauenswürdige Hausnetz. Jeder mit Zugang zur offenen Strichliste kann Striche auf einen Namen setzen, wie auf einer Papierliste.
+
+## HTTPS im Hausnetz
+
+Ab v1.13.2 kann der Startdienst HTTP und HTTPS gleichzeitig an derselben LAN-Adresse anbieten. Dafür bei einer bestehenden Installation zuerst den [Startdienst für HTTPS aktualisieren](../Repository-Updates.md#startdienst-für-https-aktualisieren). Läuft der Hausnetzzugang bereits über einen Reverse-Proxy wie Caddy, kann dort das Zertifikat eingerichtet werden. In diesem Fall genügt das reguläre Anwendungsupdate und die Kasse bleibt intern über Loopback angebunden.
+
+Im vorhandenen `config.json` das Feld `https` ergänzen. Hier lauscht HTTP beispielhaft auf Port 80 und HTTPS auf dem Standardport 443. Die vorhandene LAN-Adresse, den HTTP-Port und die übrigen Einstellungen der Kasse beibehalten.
+
+```json
+{
+  "host": "192.168.1.25",
+  "port": 80,
+  "https": {
+    "hostname": "bw.uhaus",
+    "certFile": "/etc/bierwart/tls/fullchain.pem",
+    "keyFile": "/etc/bierwart/tls/privkey.pem",
+    "port": 443
+  }
+}
+```
+
+- Im Haus-DNS muss `bw.uhaus` auf die eingetragene LAN-Adresse zeigen. Das Serverzertifikat muss diesen Namen im *Subject Alternative Name* enthalten. Für Zugriff über eine IP-Adresse braucht das Zertifikat auch diese IP als entsprechenden Eintrag.
+- `certFile` enthält das Serverzertifikat und gegebenenfalls die Zwischenzertifikate im PEM-Format. `keyFile` enthält den zugehörigen privaten TLS-Schlüssel. Beide Dateien außerhalb der Web- und Datenverzeichnisse ablegen und für das Dienstkonto lesbar machen. Für eine Haus-CA deren öffentliches Stammzertifikat auf den verwendeten Geräten als vertrauenswürdig einrichten. Der Update-Signierschlüssel hat eine eigene Aufgabe.
+- Für Port 443 benötigt das Dienstkonto dieselbe Berechtigung zum Binden niedriger Ports wie für Port 80. Alternativ z. B. `8443` eintragen und `https://bw.uhaus:8443/` öffnen. Eine lokale Firewall für den HTTPS-Port im Hausnetz freigeben.
+- Den Bierwart-Dienst nach Änderungen an Konfiguration oder Zertifikat neu starten. Dann sind `https://bw.uhaus/` und `https://bw.uhaus/updates/` erreichbar. Mit fehlendem oder auf `null` gesetztem Feld `https` startet die Kasse wie bisher nur mit HTTP.
 
 ## Konten und Startpasswort
 

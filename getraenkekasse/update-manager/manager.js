@@ -8,7 +8,7 @@ const {fork,execFileSync} = require("node:child_process");
 const {once} = require("node:events");
 const {setTimeout:delay} = require("node:timers/promises");
 const express = require("express");
-const {lanConfig} = require("../lan");
+const {lanConfig,listenLan,logListeners} = require("../lan");
 const {repoAddress,listTags,prepare,hashPattern,newestFirst} = require("./releases");
 
 const root = path.dirname(__dirname);
@@ -22,7 +22,7 @@ const builtin = {id:"initial",tag:"v"+require("../package.json").version,repo:""
 const liveFiles = ["data","assets","config.json"];
 let state, visibleTags = [], worker, busy = false, maintenance = true, requests = 0, shuttingDown = false;
 let job = {message:"Kasse startet.",phase:"startup"};
-let operation, lock, listener;
+let operation, lock, listeners = [];
 
 async function readJson(file,fallback) {
   try { return JSON.parse(await fs.readFile(file,"utf8")); }
@@ -211,7 +211,7 @@ async function main() {
     cfg=await readJson(path.join(backups,pending.backup,"config.json"));
   }
   const host=process.env.BW_HOST || cfg.host || "127.0.0.1", port=Number(process.env.BW_PORT || cfg.port || 3000);
-  const access=lanConfig(host);
+  const access=lanConfig(host,undefined,cfg.https?.hostname);
   await fs.mkdir(storage,{recursive:true,mode:0o700});
   // One writer per installation, even if another launcher chooses a different HTTP port.
   if (process.platform==="linux") {
@@ -278,7 +278,7 @@ async function main() {
   app.use("/updates",(req,res)=>res.sendStatus(404));
   app.use(relay);
   app.use((err,req,res,next)=>res.status(400).json({error:err.message}));
-  listener=app.listen(port,host); await once(listener,"listening");
+  listeners=await listenLan(app,host,port,cfg.https,root);
   await fs.mkdir(releases,{recursive:true}); await fs.mkdir(backups,{recursive:true});
   state=await readJson(stateFile,{repo:"",active:builtin.id,cache:[]});
   busy=true;
@@ -286,13 +286,13 @@ async function main() {
   try { await startWorker(state.active); maintenance=false; describe("ready","Kasse ist bereit."); }
   catch(err) { await stopWorker(); describe("error",err.message); console.error(err.message); }
   busy=false;
-  console.log("Getränkekasse: http://"+host+":"+listener.address().port);
+  logListeners(listeners);
 }
 async function close() {
   if(shuttingDown) return;
   shuttingDown=true;
   if(operation) await operation;
-  if(listener) listener.close();
+  for(const listener of listeners) listener.close();
   await drain().catch(()=>{});
   await stopWorker();
   process.exit(0);

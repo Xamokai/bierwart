@@ -39,7 +39,7 @@ Unter **Verwaltung → Software-Updates** das Repository auswählen, **Nach Upda
 
 Beim Laden läuft die Kasse weiter. Vor dem Wechsel schließt sie laufende Anfragen ab und sichert `data`, `assets` und `config.json` unter `getraenkekasse/.bierwart/backups/`. Dann startet sie die gewählte Version und prüft die Konten- und Produkt-API. Erst danach nimmt sie wieder Buchungen an. Eine fehlgeschlagene Aktivierung stellt den unmittelbar zuvor gesicherten Bestand wieder her. Der nächste Start verarbeitet auch einen durch Stromausfall unterbrochenen Wechsel.
 
-Ein bewusst gewählter Rückwechsel verwendet **den aktuellen Kassenbestand**. Bereits gebuchte Striche bleiben erhalten. Die Version muss das Datenformat der Installation unterstützen. Die Versionen 1.10.1 bis 1.13.1 verwenden Format 1. Künftige Releases mit anderem Format benötigen eine eigene Datenmigration.
+Ein bewusst gewählter Rückwechsel verwendet **den aktuellen Kassenbestand**. Bereits gebuchte Striche bleiben erhalten. Die Version muss das Datenformat der Installation unterstützen. Die Versionen 1.10.1 bis 1.13.2 verwenden Format 1. Künftige Releases mit anderem Format benötigen eine eigene Datenmigration.
 
 Mitglieder melden sich nach dem Neustart erneut an. Der direkte Verwaltungslink `/updates/` funktioniert auch bei einer älteren Kassenoberfläche und bei einem Startfehler der Kasse. Die Zugangsdaten entsprechen der Verwaltungs-PIN. Sicherungen und lokale Programmversionen bleiben bis zur manuellen Bereinigung auf dem Server. Den Datenordner zusätzlich wie bisher auch außerhalb des Servers sichern.
 
@@ -75,6 +75,34 @@ git push origin main v1.11.2
 Für die Entwicklung aus einem **frischen Clone** zunächst unter `getraenkekasse` mit `node update-manager/init.js` eine leere Testkasse einrichten und mit `npm ci` die Abhängigkeiten installieren. Den Betriebsbestand auf dem Server vom Quell-Repository getrennt halten.
 
 ## Betriebsdetails
+
+### Startdienst für HTTPS aktualisieren
+
+Der Wechsel auf v1.13.2 unter **Verwaltung → Software-Updates** aktualisiert die Anwendung. Bei einem bereits installierten Startdienst bis v1.13.1 müssen zusätzlich zwei Programmdateien einmalig in das dauerhafte Installationsverzeichnis übernommen werden. Bei einer Neuinstallation aus v1.13.2 sind sie bereits enthalten.
+
+1. Die Version v1.13.2 regulär in der Verwaltung aktivieren. In einer **separaten Arbeitskopie** des Repositories den Tag abrufen. Die Variable `kasse` im Beispiel auf das tatsächliche dauerhafte Verzeichnis mit `config.json` und `update-manager/` setzen. Darin liegt nach dem Update auch die vom Startdienst verwendete Liste der freigegebenen Schlüssel.
+2. In der separaten Arbeitskopie die Signatur prüfen und die beiden Dateien aus dem verifizierten Stand in ein temporäres Verzeichnis entpacken:
+
+   ```sh
+   kasse=/pfad/zur/getraenkekasse
+   git fetch origin tag v1.13.2 &&
+     tagobjekt=$(git rev-parse 'refs/tags/v1.13.2^{tag}') &&
+     git -c gpg.format=ssh -c gpg.ssh.allowedSignersFile="$kasse/.bierwart/release-signers" verify-tag "$tagobjekt" &&
+     quelle=$(mktemp -d) &&
+     git archive -o "$quelle/startdienst.tar" "$tagobjekt" getraenkekasse/lan.js getraenkekasse/update-manager/manager.js &&
+     tar -xf "$quelle/startdienst.tar" -C "$quelle"
+   ```
+
+3. Nach erfolgreicher Prüfung den Bierwart-Dienst anhalten und die Dateien in seiner Installation ersetzen:
+
+   ```sh
+   install -m 644 "$quelle/getraenkekasse/lan.js" "$kasse/lan.js" &&
+     install -m 644 "$quelle/getraenkekasse/update-manager/manager.js" "$kasse/update-manager/manager.js"
+   ```
+
+4. Zertifikat und TLS-Schlüssel bereitstellen, die vorhandene `config.json` ergänzen und den Dienst wieder starten. Die konkreten Felder und die Browseradresse stehen unter [HTTPS im Hausnetz](getraenkekasse/README.md#https-im-hausnetz).
+
+### Programm und Betriebsdaten
 
 Der dauerhaft installierte Startdienst stellt die Update-Seite unter der bekannten Kassenadresse bereit. Die Kasse läuft dahinter als einzelner Prozess. Änderungen am Startdienst selbst werden durch ein neues Installationspaket eingespielt. Repository-Wechsel betreffen die Kassenanwendung einschließlich der Weboberfläche.
 
