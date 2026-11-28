@@ -83,6 +83,25 @@ function groupEventsByTheme(events) {
   return [...groups].filter(([, entries]) => entries.length);
 }
 
+function overviewName(account) {
+  return account.startsAt ? account.name+" · "+new Date(account.startsAt).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"}) : account.name;
+}
+function overviewTransactions(transactions) {
+  const groups = new Map();
+  function add(id,row) {
+    if (!groups.has(id)) groups.set(id,[]);
+    groups.get(id).push(row);
+  }
+  for (const tx of transactions) {
+    add(tx.accountId,tx);
+    if (tx.eventId && tx.eventId!==tx.accountId)
+      add(tx.eventId,{...tx,description:tx.accountName+" · "+tx.description});
+  }
+  return groups;
+}
+
+const historyDate = new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Berlin"});
+const historyTime = new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",hour:"2-digit",minute:"2-digit"});
 function appendAccountHistory(body,tx,eur) {
   if (!tx.length) {
     body.insertAdjacentHTML("beforeend",'<p class="muted">Keine Buchungen.</p>');
@@ -102,14 +121,14 @@ function appendAccountHistory(body,tx,eur) {
     const semBody = semDet.querySelector(".body");
     body.appendChild(semDet);
     const byDay = {};
-    stx.forEach(t => { const d = t.date.slice(0, 10); (byDay[d] = byDay[d] || []).push(t); });
+    stx.forEach(t => { const d = historyDate.format(new Date(t.date)); (byDay[d] = byDay[d] || []).push(t); });
     Object.entries(byDay).forEach(([day, list]) => {
       const sum = list.reduce((s, t) => s + (t.type === "deposit" ? t.total : -t.total), 0);
       semBody.insertAdjacentHTML("beforeend", `
         <div class="list-item"><strong class="gold-text">${new Date(day).toLocaleDateString("de-DE")}</strong>
           <span class="${sum >= 0 ? "amount-pos" : "amount-neg"}">${sum >= 0 ? "+" : "−"}${eur(Math.abs(sum))}</span></div>
         ${list.map(t => `<div class="list-item" style="padding-left:18px">
-          <span>${displayText(t.description)} <span class="muted">${t.date.slice(11, 16)} Uhr${t.exported ? " · exportiert" : ""}</span></span>
+          <span>${t.bookingContext ? "<strong class=\"booking-context\">"+displayText(t.bookingContext)+"</strong>" : ""}${displayText(t.description)} <span class="muted">${historyTime.format(new Date(t.date))} Uhr${t.exported ? " · exportiert" : ""}</span></span>
           ${transactionAmount(t,eur)}
         </div>`).join("")}`);
     });

@@ -5,7 +5,8 @@
 <header class="app">
 <nav class="pagenav" aria-label="Kasse"><a href="strichliste.html" class="area-link" aria-label="Strichliste" title="Strichliste"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tally-5"></use></svg><span class="area-caption">Strichliste</span></a><a href="veranstaltung.html" aria-current="page" class="area-link" aria-label="Veranstaltungen" title="Veranstaltungen"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#calendar-days"></use></svg><span class="area-caption">Veranstaltungen</span></a></nav></header>
 <main><section id="pick">
-  <div class="section-head"><h1 class="page-title">Veranstaltungen</h1><button class="btn" id="btnNewEv">Veranstaltung anlegen</button></div>
+  <div class="section-head"><h1 class="page-title">Veranstaltungen</h1><button class="btn gold" id="btnNewEv" hidden>Termin anlegen</button></div>
+  <p id="calendarStatus" class="muted" role="status" hidden></p>
   <div id="events"><p role="status">Veranstaltungen werden geladen …</p></div>
 </section>
 <section id="book" hidden>
@@ -18,94 +19,88 @@
   <a class="back-link" href="veranstaltung.html">← Andere Veranstaltung</a>
 </section></main>
 <nav class="footer-nav" aria-label="Weitere Bereiche"><a href="user.html"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#wallet"></use></svg>Mein Konto</a><a href="admin.html"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#shield-check"></use></svg>Verwaltung</a></nav>
-<dialog class="bw-dialog compact-dialog" id="sheet" aria-labelledby="event-title">
-  <div class="dialog-head"><h2 id="event-title">Veranstaltung anlegen</h2><button class="btn small ghost" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
-  <p class="muted">Die Veranstaltung steht eine Woche zur Auswahl.</p>
-  <div class="row" id="kindChips" aria-label="Namensvorschläge"></div>
-  <form class="stack-form"><label>Name<input id="evNewName" maxlength="120" required placeholder="z. B. Fuxenkneipe"></label>
-    <button type="submit" class="btn gold">Veranstaltung anlegen</button></form>
-</dialog>
 <div class="toast" id="toast" role="status"></div>
 <script src="/vendor/hyphen.js"></script><script src="/vendor/hyphen-de.js"></script>
-<script src="display.js"></script><script src="ui.js"></script><script src="order.js"></script><script src="bar-types.js"></script><script src="bar-card.js"></script><script src="temporary-drinks.js"></script>
+<script src="display.js"></script><script src="ui.js"></script><script src="event-form.js"></script><script src="order.js"></script><script src="bar-types.js"></script><script src="bar-card.js"></script><script src="temporary-drinks.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 let eventId = new URLSearchParams(location.search).get("event");
-let shared = [], current = null, kinds = [];
+let shared = [], current = null;
+const headers = () => ({Authorization:"Bearer " + (localStorage.getItem("kasse_token") || "")});
 const eventUrl = e => (e.mode === "personal" ? "strichliste.html" : "veranstaltung.html") + "?event=" + encodeURIComponent(e.id);
 const order = mountOrder({
   grid:$("prodGrid"), sum:$("evSum"), tally:$("evTally"), reset:$("btnReset"), submit:$("btnBook"),
   book:items => BW.post("/api/purchase", {accountId:current.id, items}),
   onBooked:async () => { BW.toast("Gebucht auf " + current.name + "."); await load(); }, onRejected:load
 });
+const format = options => new Intl.DateTimeFormat("de-DE", Object.assign({timeZone:"Europe/Berlin"},options));
+const year = format({year:"numeric"}), month = format({month:"short"}), day = format({day:"2-digit"}), clock = format({hour:"2-digit",minute:"2-digit"}), fullDate = format({day:"numeric",month:"short",year:"numeric"});
 function renderEventGroups(events) {
-  const container = $("events");
-  const groups = groupEventsByTheme(events).map(([theme, entries]) => {
-    const section = document.createElement("section");
-    section.className = "event-group";
-    const heading = document.createElement("h3");
-    heading.textContent = theme;
-    const grid = document.createElement("div");
-    grid.className = "grid";
-    for (const e of entries) {
-      const link = document.createElement("a");
-      link.className = "tile event-tile" + (e.permanent ? " prio" : "");
-      if (e.permanent) link.setAttribute("aria-description", "Dauerhafte Veranstaltung");
-      link.href = eventUrl(e);
-      const name = document.createElement("strong"); name.textContent = wrapName(e.name);
-      const mode = document.createElement("small"); mode.textContent = e.mode === "personal" ? "Auf Personen buchen" : "Direkt buchen";
-      link.append(name, mode);
-      grid.append(link);
-    }
-    section.append(heading, grid);
-    return section;
-  });
+  const container = $("events"), past = container.querySelector("details"), expanded = past && past.open;
   container.textContent = "";
-  container.append(...groups);
-  if (!groups.length) container.textContent = "Noch keine Veranstaltung angelegt.";
+  for (const [status,title] of [["active","Jetzt buchbar"],["upcoming","Demnächst"],["past","Vergangene Termine"]]) {
+    const entries = events.filter(e=>e.status===status);
+    if (!entries.length) continue;
+    const archived = status==="past", active = status==="active";
+    const group = document.createElement(archived ? "details" : "section");
+    group.className = "calendar-group";
+    if (archived) { entries.reverse(); group.open = !!expanded; }
+    const heading = document.createElement(archived ? "summary" : "h2");
+    heading.textContent = title + (archived ? " ("+entries.length+")" : "");
+    const list = document.createElement("div"); list.className = "calendar-list";
+    for (const e of entries) {
+      const start = new Date(e.startsAt), end = new Date(e.endsAt), last = new Date(end-1);
+      const row = document.createElement(active ? "a" : "div");
+      row.className = "event-tile calendar-entry" + (active ? " bookable" : "");
+      if (active) row.href = eventUrl(e);
+      const stamp = document.createElement("time"); stamp.className = "calendar-date"; stamp.dateTime = e.startsAt; stamp.setAttribute("aria-label",fullDate.format(start));
+      const num = document.createElement("b"), mon = document.createElement("small");
+      num.textContent = day.format(start); mon.textContent = month.format(start)+(year.format(start)!==year.format(new Date()) ? " "+year.format(start) : ""); stamp.append(num,mon);
+      const info = document.createElement("div"), name = document.createElement("strong"), note = document.createElement("small");
+      name.textContent = wrapName(e.name);
+      const range = fullDate.format(start)!==fullDate.format(last);
+      const times = e.allDay ? (range ? "Bis "+fullDate.format(last) : "Ganztägig") :
+        clock.format(start)+" – "+(range ? fullDate.format(end)+", " : "")+clock.format(end)+" Uhr";
+      note.textContent = times + (active ? (e.mode==="direct" ? " · Veranstaltungskonto" : " · Personenkonten") : "");
+      info.append(name,note); row.append(stamp,info);
+      if (active) {
+        const arrow = document.createElement("span"); arrow.textContent = "→"; arrow.setAttribute("aria-hidden","true"); row.append(arrow);
+      }
+      list.append(row);
+    }
+    group.append(heading,list); container.append(group);
+  }
+  if (!events.length) container.textContent = "Für dieses Semester sind noch keine Termine eingetragen.";
 }
-let loadNumber = 0;
+let loadNumber = 0, loadingTimer;
 async function load() {
   const number = ++loadNumber;
-  const [events, templates, products, drinks] = await Promise.all([
-    BW.api("/api/events"), BW.api("/api/eventkinds"), eventId ? BW.api("/api/products") : [], eventId ? BW.api("/api/temporary-drinks") : []
+  const [plan,events,products,drinks] = await Promise.all([
+    BW.api("/api/events/calendar",{headers:headers(),cache:"no-store"}), eventId ? BW.api("/api/events") : [],
+    eventId ? BW.api("/api/products") : [], eventId ? BW.api("/api/temporary-drinks") : []
   ]);
   if (number !== loadNumber) return;
-  kinds = templates; shared = drinks;
-  current = events.find(e => e.id === eventId);
+  shared = drinks;
+  clearTimeout(loadingTimer);
+  if (plan.loading && !plan.syncedAt && !eventId) loadingTimer = setTimeout(refreshEvents,2000);
+  $("btnNewEv").hidden = !plan.canCreate;
+  $("calendarStatus").hidden = !(plan.error || plan.loading);
+  $("calendarStatus").textContent = plan.error ? (plan.syncedAt ? "Semesterprogramm offline · Stand "+fullDate.format(new Date(plan.syncedAt)) : "Semesterprogramm derzeit nicht erreichbar.") : "Semesterprogramm wird geladen …";
+  current = events.find(e=>e.id===eventId);
   if (current && current.mode === "personal") { location.replace(eventUrl(current)); return; }
   $("pick").hidden = !!current; $("book").hidden = !current;
   if (current) {
     $("evName").textContent = wrapName(current.name);
     order.setProducts(products.concat(shared, current.customDrinks || [], current.barDrinks || []));
   } else {
-    renderEventGroups(events);
-    if (eventId) { eventId = null; history.replaceState(null, "", "veranstaltung.html"); throw Error("Diese Veranstaltung ist nicht mehr verfügbar."); }
+    renderEventGroups(plan.entries);
+    if (plan.loading && !plan.entries.length) $("events").textContent = "";
+    if (eventId) { eventId = null; history.replaceState(null, "", "veranstaltung.html"); BW.toast("Für diesen Termin ist die Buchung geschlossen."); }
   }
 }
 mountEventCard($("btnBarCard"), () => current, load);
 mountTemporaryDrinks({trigger:$("btnEventDrinks"), reload:load, getShared:() => shared, getEvent:() => current});
-const form = $("sheet").querySelector("form");
-const submit = form.querySelector("button");
-const modal = BW.dialog($("sheet"), () => !submit.disabled);
-$("btnNewEv").onclick = () => {
-  const today = new Date().toLocaleDateString("de-DE"); form.reset(); $("kindChips").textContent = "";
-  for (const kind of kinds) {
-    const b = document.createElement("button");
-    b.className = "btn small"; b.textContent = kind;
-    b.onclick = () => { $("evNewName").value = kind + " " + today; };
-    $("kindChips").append(b);
-  }
-  modal.open();
-};
-form.onsubmit = async e => {
-  e.preventDefault(); if (submit.disabled) return;
-  submit.disabled = true;
-  try {
-    const event = await BW.post("/api/events", {name:$("evNewName").value});
-    location.assign("veranstaltung.html?event=" + encodeURIComponent(event.id));
-  } catch (error) { BW.toast(error.message); submit.disabled = false; }
-};
+mountEventForm($("btnNewEv"),headers,load);
 function refreshEvents() {
   load().catch(e => BW.retryMessage($("events"),e.message,refreshEvents));
 }

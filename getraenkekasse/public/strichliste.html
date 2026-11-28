@@ -21,11 +21,19 @@
 
 <dialog class="bw-dialog order-dialog" id="sheet" aria-labelledby="sheetName">
   <div class="dialog-head"><h2 id="sheetName"></h2><button class="btn small ghost" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
+  <form id="contextForm" class="stack-form" hidden>
+    <label><span id="contextLabel"></span><input id="contextInput" required maxlength="120" autocomplete="off" enterkeyhint="go"></label>
+    <div id="recentContexts" hidden><p class="muted">In den letzten 24 Stunden</p><div id="contextChoices" class="context-choices"></div></div>
+    <button class="btn gold" type="submit">Getränke wählen</button>
+  </form>
+  <div id="orderContents">
+  <button class="btn small context-edit" type="button" id="editContext" hidden></button>
   <div class="tally" id="sheetTally"></div>
   <div class="drink-grid" id="sheetProducts"></div>
   <div class="order-bar"><span>Summe <strong id="sheetSum"></strong></span><div class="order-actions">
     <button class="btn" id="btnReset">Zurücksetzen</button><button class="btn gold" id="btnBook">Buchen</button>
   </div></div>
+  </div>
 </dialog>
 <dialog class="bw-dialog compact-dialog" id="newAccount" aria-labelledby="newTitle">
   <div class="dialog-head"><h2 id="newTitle">Konto anlegen</h2><button class="btn ghost small" aria-label="Schließen" title="Schließen" data-close><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#x"></use></svg></button></div>
@@ -41,18 +49,54 @@
 const $ = id => document.getElementById(id);
 const eventId = new URLSearchParams(location.search).get("event");
 let accounts = null, shared = [], currentEvent = null, current = null;
-let loadNumber = 0;
+let loadNumber = 0, contextRequest = 0, bookingContext = "", suggestions = [];
 const order = mountOrder({
   grid:$("sheetProducts"), sum:$("sheetSum"), tally:$("sheetTally"), reset:$("btnReset"), submit:$("btnBook"),
-  book:items => BW.post("/api/purchase", {accountId:current.id, eventId:eventId || undefined, items}),
+  book:items => BW.post("/api/purchase", {accountId:current.id, eventId:eventId || undefined, bookingContext:bookingContext || undefined, items}),
   onRejected:load,
   onBooked:async () => { modal.close(); BW.toast("Gebucht für " + current.name + "."); await load(); }
 });
 const modal = BW.dialog($("sheet"), () => !order.busy);
+function showContext() {
+  $("orderContents").hidden = true; $("contextForm").hidden = false;
+  $("sheet").classList.add("context-step");
+  $("contextLabel").textContent = current.contextLabel==="Name" ? "Für wen wird gebucht?" : "Für welchen Arbeitseinsatz?";
+  $("contextInput").placeholder = current.contextLabel==="Name" ? "z. B. Muster, Max" : "z. B. Gartenpflege";
+  $("contextInput").value = bookingContext;
+  renderSuggestions();
+}
+function chooseContext(value) {
+  bookingContext = value.trim();
+  if (!bookingContext) { $("contextInput").focus(); return; }
+  $("contextForm").hidden = true; $("orderContents").hidden = false; $("sheet").classList.remove("context-step");
+  $("editContext").textContent = bookingContext + " · Ändern"; $("editContext").hidden = false;
+  const first = $("sheetProducts").querySelector("button"); if (first) first.focus();
+}
+function renderSuggestions() {
+  const q = $("contextInput").value.trim().toLocaleLowerCase("de");
+  const choices = suggestions.filter(s=>s.toLocaleLowerCase("de").includes(q));
+  $("recentContexts").hidden = !choices.length;
+  $("contextChoices").textContent = "";
+  for (const name of choices) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn small";
+    b.textContent = name; b.onclick = () => chooseContext(name); $("contextChoices").append(b);
+  }
+}
+$("contextForm").onsubmit = e => { e.preventDefault(); chooseContext($("contextInput").value); };
+$("contextInput").oninput = renderSuggestions;
+$("editContext").onclick = () => { if (!order.busy) { showContext(); $("contextInput").focus(); } };
 function openSheet(account) {
-  current = account;
+  current = account; bookingContext = ""; suggestions = []; const request = ++contextRequest;
   order.clear();
   $("sheetName").textContent = wrapName(current.name);
+  $("editContext").hidden = true; $("contextForm").hidden = true; $("orderContents").hidden = false;
+  $("sheet").classList.remove("context-step");
+  if (current.contextLabel) {
+    showContext();
+    BW.api("/api/tally/accounts/"+encodeURIComponent(account.id)+"/contexts",{cache:"no-store"}).then(names=>{
+      if (contextRequest===request) { suggestions=names; renderSuggestions(); }
+    }).catch(()=>{ if (contextRequest===request && $("sheet").open) BW.toast("Vorschläge konnten nicht geladen werden. Bitte neu eingeben."); });
+  }
   modal.open();
 }
 function renderNames() {
@@ -89,7 +133,7 @@ function renderNames() {
 async function load() {
   const number = ++loadNumber;
   const [names, products, drinks, events] = await Promise.all([
-    BW.api("/api/tally/accounts" + (eventId ? "?event=" + encodeURIComponent(eventId) : "")),
+    BW.api("/api/tally/accounts" + (eventId ? "?event=" + encodeURIComponent(eventId) : "")).catch(error=>{ if (!eventId) throw error; return error; }),
     BW.api("/api/products"), BW.api("/api/temporary-drinks"), eventId ? BW.api("/api/events") : []
   ]);
   if (number !== loadNumber) return;
@@ -97,9 +141,11 @@ async function load() {
   if (eventId && !currentEvent) {
     accounts = []; $("btnBarCard").hidden = true; $("names").textContent = "Diese Veranstaltung ist nicht mehr verfügbar.";
     $("btnNew").disabled = $("btnEventDrinks").disabled = true;
-    if (!order.busy) modal.close();
-    throw Error("Diese Veranstaltungsstrichliste ist nicht verfügbar.");
+    $("sheet").close();
+    const link = document.createElement("a"); link.className="back-link"; link.href="veranstaltung.html"; link.textContent="Zum Terminplan"; $("names").append(link);
+    return;
   }
+  if (names instanceof Error) throw names;
   shared = drinks;
   $("btnBarCard").hidden = !currentEvent;
   if (currentEvent) $("pageTitle").textContent = wrapName(currentEvent.name);

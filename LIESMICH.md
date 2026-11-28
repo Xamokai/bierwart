@@ -1,4 +1,4 @@
-# Bierwart LAN 1.13.2
+# Bierwart LAN 1.14.0
 
 ## Update einspielen
 
@@ -44,14 +44,11 @@ Mitglieder können unter **Mein Konto → E-Mail-Adresse** eine persönliche Adr
 
 ## Anstreichen und Veranstaltungen
 
-Ein dünner orangefarbener Rand kennzeichnet priorisierte Konten und bei der Veranstaltungsauswahl die dauerhaft angelegten Veranstaltungen. Die Auswahl ist nach Themen gegliedert, auch im Schnapswart-Bereich. Innerhalb jedes Themas sind die Namen alphabetisch sortiert.
+Die **Veranstaltungen** zeigen den Terminplan aus dem [Semesterprogramm der Uttenruthia](https://uttenruthia.de/programm/ical-export.html). Während eines Termins führt **Jetzt buchbar** zur Buchung. Beginn und Ende gelten in Erlanger Ortszeit. Vergangene Termine des laufenden Semesters lassen sich aufklappen. Die Kasse prüft das Programm alle sechs Stunden und behält bei Verbindungsproblemen den letzten erfolgreichen Stand. Burschenconvent, Philisterstammtisch (PST) und Wissenschaftliche Abende (WA) sind ausgenommen.
 
-| Einträge | Wo und wie gebucht wird |
-|---|---|
-| Abkneipe, Ankneipe, Stiftungsfestkneipe, Fuxenkneipe, Himmelfahrtsbummel, Kneipen, Stempferbummel, Stiftungstag, Stockwerksparty | Unter **Veranstaltung** auswählen und direkt auf das zugeordnete Konto buchen. Sonstige Anlässe mit Zuordnung auf 1800 oder 4150 verwenden ebenfalls die Direktbuchung. |
-| Arbeitseinsatz, Barzahler, Couleur, Gast, Löschbier, SHV | Diese Sammelkonten stehen oben auf der **Strichliste**. SHV ersetzt Philister und bucht wie Couleur auf GnuCash-Konto **1800**. |
-| Aktivenfahrt, Berg, Dürnstein, E/A-Konten, Feuerzangenbowle, Gansessen, Totengedenken, Weihnachten, Wissenschaftliche Abende | Im Kiosk ausgeblendet. Die Daten stehen für Auswertung und Buchhaltung weiterhin zur Verfügung. |
-| Cocktailabend/Sommerparty, Divali, Halloweenparty, Tresenbachelor, Stiftungsfestball | Unter **Veranstaltung** die Party öffnen. Es erscheint dieselbe Strichliste mit Namenskacheln und Suche wie im normalen Betrieb. Namen antippen, Getränke anstreichen und mit **Buchen** bestätigen. GnuCash belastet das Personenkonto und schreibt den Betrag dem Gegenkonto der Veranstaltung gut. Weitere Veranstaltungen ohne Sonderzuordnung verwenden ebenfalls die Personenstrichliste. |
+BW, SW und KW können sich in **Mein Konto** anmelden und unter **Veranstaltungen → Termin anlegen** Datum und Buchungsart wählen. In der Verwaltung steht dieselbe Funktion zur Verfügung. Eigene Termine sind am angegebenen Tag ganztägig buchbar. Bei Direktbuchungen trägt das Veranstaltungskonto den Verbrauch. Bei Personenbuchungen wählt man zuerst die Person. XXX kann unter **GnuCash Import / Export → Kontenzuordnung** das GnuCash-Konto des datierten Termins festlegen.
+
+Bei **Gast** und **Couleur** zuerst den Namen eintragen, bei **Arbeitseinsatz** die Tätigkeit. Vorschläge stammen aus den Buchungen des jeweiligen Kontos in den letzten 24 Stunden. In der **Kontenübersicht** sehen BW und XXX auch später noch, zu wem oder wozu eine Buchung gehört. Couleur verwendet weiterhin das Konto 1800. SHV ist archiviert.
 
 Unter den Sammelkonten stehen zuerst die priorisierten Personen und danach die Personen mit einem Getränkekauf in den vergangenen sieben Tagen. Jede Gruppe ist alphabetisch sortiert. Über die Suche findest du auch die übrigen Personen und die Langnamen der Sammelkonten. Bei Personenstrichlisten für Veranstaltungen erscheinen nur die Personengruppen.
 

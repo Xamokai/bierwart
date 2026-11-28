@@ -39,10 +39,10 @@ async function startTestServer(t, db) {
   // Installed releases serve these browser assets from inside .bierwart/versions.
   for (const file of ["hyphen/hyphen.js","hyphen/patterns/de-1996.js"])
     fs.cpSync(require.resolve(file), path.join(tmp, "node_modules", file));
-  for (const item of ["server.js","stock-counts.js","stock-drinks.json","bar-catalog.js","bar-pdf.js","pdf-text.js","debt-mail.js","meal-pdf.js","forms","fonts","event-mode.js","book-format.js","book-sync.js","book-exchange.js","lan.js","gnucash-sync.js","config.json","public","assets"]) fs.cpSync(path.join(root,item),path.join(tmp,item),{recursive:true});
+  for (const item of ["server.js","stock-counts.js","stock-drinks.json","bar-catalog.js","bar-pdf.js","pdf-text.js","debt-mail.js","meal-pdf.js","forms","fonts","event-mode.js","semester-calendar.js","book-format.js","book-sync.js","book-exchange.js","lan.js","gnucash-sync.js","config.json","public","assets"]) fs.cpSync(path.join(root,item),path.join(tmp,item),{recursive:true});
   fs.mkdirSync(path.join(tmp,"data"));
   if (db) fs.writeFileSync(path.join(tmp, "data/db.json"), JSON.stringify(db));
-  const server = spawn(process.execPath,["server.js"],{cwd:tmp,env:{...process.env,BW_PORT:"0",BW_HOST:"127.0.0.1",BW_ADMIN_PIN:"778899",NODE_PATH:path.join(root,"node_modules")},stdio:["ignore","pipe","inherit"]});
+  const server = spawn(process.execPath,["server.js"],{cwd:tmp,env:{...process.env,BW_CALENDAR_OFFLINE:"1",BW_PORT:"0",BW_HOST:"127.0.0.1",BW_ADMIN_PIN:"778899",NODE_PATH:path.join(root,"node_modules")},stdio:["ignore","pipe","inherit"]});
   t.after(async () => { if(server.exitCode===null){server.kill();await once(server,"exit");} fs.rmSync(tmp,{recursive:true,force:true}); });
   const [line] = await once(server.stdout,"data");
   const base = String(line).match(/http:\/\/\S+/)[0];
@@ -56,7 +56,12 @@ async function startTestServer(t, db) {
   return {call, base, admin, tmp};
 }
 
-test("Strichliste gruppiert Altbestände, Couleur und SHV buchen auf GnuCash 1800", async t => {
+function createToday(call,name,mode) {
+  const date = require("../semester-calendar").dayInBerlin(Date.now());
+  return call("/api/events",{date,name,mode});
+}
+
+test("Strichliste gruppiert Altbestände, archiviert SHV und erhält dessen offene Buchungen", async t => {
   const people = ["Anna", "Beat", "Clara", "Dora", "Eva", "Fritz"];
   const path1800 = "Bestandskonten:Philisterverein";
   const accounts = people.map(name => ({id:name, name, priority:name === "Anna"}));
@@ -76,25 +81,27 @@ test("Strichliste gruppiert Altbestände, Couleur und SHV buchen auf GnuCash 180
   assert.match(await call("/vendor/hyphen-de.js"), /hyphenationPatternsDe1996/);
   const tally = await call("/api/tally/accounts");
   assert.deepEqual(tally.map(a => [a.name, a.group]), [
-    ["Couleur","collective"], ["Gast","collective"], ["Löschbier","collective"], ["SHV","collective"],
+    ["Arbeitseinsatz","collective"], ["Couleur","collective"], ["Gast","collective"], ["Löschbier","collective"],
     ["Anna","priority"], ["Beat","recent"], ...people.slice(2).map(name => [name,"other"])]);
   assert.equal(tally.find(a => a.name === "Gast").id, events[0]);
-  assert.equal(tally.find(a => a.name === "SHV").id, events[2]);
+  assert(!tally.some(a=>a.name==="SHV"));
   assert.equal(tally.find(a => a.name === "Beat").activeLast24Hours, false);
-  assert.deepEqual((await call("/api/tally/accounts?event=Divali")).map(a => a.name), people);
-  const couleur = tally[0];
+  await call("/api/tally/accounts?event=Divali", undefined, {}, "GET", 404);
+  const dated = await createToday(call,"Divali","personal");
+  assert.deepEqual((await call("/api/tally/accounts?event="+dated.id)).map(a=>a.name),people);
+  const couleur = tally.find(a=>a.name==="Couleur");
   const mapping = "/api/admin/gnucash/accounts";
   assert.equal((await call(mapping)).find(a => a.id === couleur.id).path, path1800);
   await call(mapping + "/" + couleur.id, {path:"Konten:1801 Falsch"}, admin, "PUT", 400);
-  await call("/api/purchase", {accountId:couleur.id, items:[{name:"Bier",qty:1}]});
-  await call("/api/purchase", {accountId:events[2], items:[{name:"Bier",qty:1}]});
+  await call("/api/purchase", {accountId:couleur.id, bookingContext:"Testgast", items:[{name:"Bier",qty:1}]});
+  await call("/api/purchase", {accountId:events[2], items:[{name:"Bier",qty:1}]}, {}, "POST", 404);
   const endpoint = "/api/admin/export-runs";
   const run = await call(endpoint, {});
   const book = readBook(Buffer.from(await call(endpoint + "/" + run.id + "/csv")));
   const debits = book.transactions.flatMap(tx => tx.splits);
   const total = path => debits.filter(s => s.path === path).reduce((sum, s) => sum + splitCents(s), 0);
   assert.equal(total(oldTarget), 100);
-  assert.equal(total(path1800), 300);
+  assert.equal(total(path1800), 150);
 });
 
 test("Offene Käufe behalten ihr Buchungsziel bei Änderungen durch XXX und Verwaltung", async t => {
@@ -258,8 +265,8 @@ test("Konto, Buchungslauf und GnuCash-Rückimport", async t => {
     await call(meals+meal.id+"/payer",{payerKind:"account",payerAccountId:a.id},admin,"PUT",409);
     await call(endpoint+"/"+active.id+"/commit",{});
   }
-  const party=(await call("/api/events")).find(a=>a.name==="Divali");
-  const direct=(await call("/api/events")).find(a=>a.name==="Abkneipe");
+  const party=await createToday(call,"Divali","personal");
+  const direct=await createToday(call,"Abkneipe","direct");
   const income="Veranstaltungen:4116 Divali";
   await call("/api/admin/gnucash/accounts/"+party.id,{path:income},admin,"PUT");
   await call("/api/admin/gnucash/accounts/"+direct.id,{path:"Veranstaltungen:4150 Kneipen"},admin,"PUT");
@@ -397,8 +404,8 @@ test("Konto, Buchungslauf und GnuCash-Rückimport", async t => {
     const path = "/api/bar/recipes", recipes = await call(path);
     assert.equal(recipes.length,12);
     const gin = recipes.find(r=>r.name==="Gin Tonic");
-    const event = (await call("/api/events")).find(e=>e.mode==="personal");
-    const direct = (await call("/api/events")).find(e=>e.mode==="direct");
+    const event = await createToday(call,"Barprobe","personal");
+    const direct = await createToday(call,"Tresenabend","direct");
     const barPath = e => "/api/events/"+e.id+"/bar";
     await call(path,gin,{}, "POST",401);
     await call(path,gin,auth,"POST",401); // XXX alleine
@@ -512,6 +519,7 @@ test("SW, KW, BW und XXX zählen ihre Bestände mit zeitgebundenen Preisen", asy
     assert.equal(options.canReview,role === "gnucash");
     if (area !== "cash") await call(api,undefined,auth[role],"GET",401);
   }
+  const scheduled = await createToday(call,"Eröffnungsabend","personal");
   const options = await call(api+"/options");
   assert(options.catalogs.spirits.some(p => p.name==="Berliner Luft · 0,7 l" && p.priceCents === 641));
   const drink = {name:"Hauslikör",price:"10,01"};
@@ -534,13 +542,13 @@ test("SW, KW, BW und XXX zählen ihre Bestände mit zeitgebundenen Preisen", asy
   assert.equal((await call(api,cash,auth.gnucash,"POST",201)).totalCents,4000);
   const history = await call(api,undefined,auth.gnucash);
   assert.equal(history.length,3);
-  assert.equal(history.find(r=>r.id===result.id).eventName,options.events[0].name);
+  assert.equal(history.find(r=>r.id===result.id).eventName,scheduled.name);
   assert.equal(history.find(r=>r.id===result.id).countedBy,"Test schnapswart");
 });
 
 test("Veranstaltungszählungen buchen Verbrauch, Bareinnahmen und spätere Korrekturen genau einmal", async t => {
   const target = "Veranstaltungen:Testkneipe", eventId = "testkneipe";
-  const {call,admin} = await startTestServer(t,{accounts:[{id:eventId,name:"Testkneipe",isEvent:true,gnucashAccount:target}],transactions:[],settings:{}});
+  const {call,admin} = await startTestServer(t,{accounts:[{id:eventId,name:"Testkneipe",isEvent:true,gnucashAccount:target,...require("../semester-calendar").dateWindow("2026-08-31")}],transactions:[],settings:{}});
   const api = "/api/stock-counts", runs = "/api/admin/export-runs";
   const requestId = () => require("node:crypto").randomBytes(16).toString("hex");
   const count = (phase,items,fields={}) => ({area:"drinks",scope:"event",name:"Testkneipe",eventId,date:"2026-08-31",phase,items,requestId:requestId(),...fields});
@@ -620,4 +628,107 @@ test("Auszählungsarchiv gruppiert nach Semester und Veranstaltung und hält Zä
     ["Sommersemester 2026",[["Kneipe",["vor","nach"]],["Zweite Feier",["sommer"]]]],
     ["Wintersemester 2025/26",[["Zweite Feier",["feb"]]]]
   ]);
+});
+
+test("Semesterprogramm verarbeitet Berliner Zeit, Terminserien, Änderungen und Absagen", () => {
+  const {parseProgram,applyProgram,dateWindow} = require("../semester-calendar");
+  const at = Date.parse("2026-11-28T12:00Z");
+  const event = (uid,name,start,more="") => ["BEGIN:VEVENT","UID:"+uid,"SUMMARY:"+name,
+    "DTSTART;TZID=Europe/Berlin:"+start,more,"END:VEVENT"].filter(Boolean).join("\r\n");
+  const feed = rows => ["BEGIN:VCALENDAR","VERSION:2.0",...rows,"END:VCALENDAR"].join("\r\n");
+  const entries = [event("a","Kneipenabend","20261128T181500","DTEND;TZID=Europe/Berlin:20261128T231500"),
+    event("b","Hausabend","20261129T200000","RRULE:FREQ=WEEKLY;COUNT=2\r\nDURATION:PT2H"),
+    event("b","Hausabend verschoben","20261207T200000","RECURRENCE-ID;TZID=Europe/Berlin:20261206T200000\r\nDURATION:PT2H"),
+    event("c","Gartenfest","20261130T120000","DESCRIPTION:Beschreibung\r\naus dem fehlerhaften Export"),
+    ...["Burschenconvent","PST","Philisterstammtisch","WA-Exkursion","Wissenschaftlicher Abend"].map((name,i)=>event("x"+i,name,"20261201T190000"))];
+  const rows = parseProgram(feed(entries),at);
+  assert.equal(rows.size,4);
+  assert([...rows.values()].some(e=>e.name==="Hausabend verschoben" && e.startsAt==="2026-12-07T19:00:00.000Z"));
+  const db = {accounts:[]}; let id=0;
+  applyProgram(db,rows,()=>String(++id),at);
+  const first = db.accounts.find(a=>a.name==="Kneipenabend");
+  first.gnucashAccount="Kasse:4150 Kneipen";
+  assert.equal(first.startsAt,"2026-11-28T17:15:00.000Z");
+  assert.equal(first.endsAt,"2026-11-28T22:15:00.000Z");
+  applyProgram(db,parseProgram(feed([event("a","Kneipenabend neu","20261129T181500")]),at),()=>String(++id),at);
+  assert.equal(db.accounts.length,4);
+  assert.equal(first.name,"Kneipenabend neu"); assert.equal(first.gnucashAccount,"Kasse:4150 Kneipen");
+  assert.equal(db.accounts.filter(a=>a.calendarRemoved).length,3);
+  first.deleted=true;
+  applyProgram(db,rows,()=>String(++id),at); assert(first.deleted);
+  const cancelled=parseProgram(feed([event("a","Abgesagt","20261129T181500","STATUS:CANCELLED")]),at);
+  assert.equal(cancelled.size,0);
+  assert.throws(()=>parseProgram("temporär offline",at));
+  for (const [local,utc] of [["20260329T023000","2026-03-29T01:30:00.000Z"],["20261025T023000","2026-10-25T00:30:00.000Z"]]) {
+    const parsed = parseProgram(feed([event("dst","Zeitumstellung",local)]),Date.parse("2026-03-01"));
+    assert.equal([...parsed.values()][0].startsAt,utc);
+  }
+  for (const [date,hours] of [["2026-03-29",23],["2026-10-25",25]]) {
+    const w=dateWindow(date);assert.equal(Date.parse(w.endsAt)-Date.parse(w.startsAt),hours*3600e3);
+  }
+});
+
+test("Sammelkonto-Vorschläge gelten 24 Stunden, vergangene Buchungen bleiben für BW und XXX lesbar",async t=>{
+  const at = Date.now(), tx=(bookingContext,hours)=>({id:bookingContext,accountId:"gast",type:"purchase",items:[],total:1,
+    date:new Date(at-hours*3600e3).toISOString(),bookingContext,exported:true});
+  const {call,admin} = await startTestServer(t,{settings:{},accounts:[{id:"gast",name:"Gast",isEvent:true}],
+    transactions:[tx("Heute",23.9),tx("Gestern",24.1)]});
+  const rows = await call("/api/tally/accounts");
+  const contexts = "/api/tally/accounts/gast/contexts";
+  assert.deepEqual(await call(contexts),["Heute"]);
+  for (const name of ["Gast","Arbeitseinsatz","Couleur"]) {
+    const account=rows.find(a=>a.name===name), path="/api/tally/accounts/"+account.id+"/contexts";
+    const purchase={accountId:account.id,items:[{name:"Bier",qty:1}]};
+    for (const bad of ["","  ","a".repeat(121)]) await call("/api/purchase",{...purchase,bookingContext:bad},{}, "POST",400);
+    await call("/api/purchase",{...purchase,bookingContext:"  Muster, Max  "},{});
+    assert((await call(path)).includes("Muster, Max"));
+    await call("/api/purchase",{...purchase,bookingContext:"muster, max"},{});
+    assert.equal((await call(path)).filter(s=>s.toLowerCase()==="muster, max").length,1);
+  }
+  const person = await call("/api/accounts",{name:"Test Amt",surname:"Amt"});
+  const auth = {Authorization:"Bearer "+(await call("/api/login",{name:person.name,password:"Amt"})).token};
+  for (const read of ["/api/admin/accounts","/api/admin/transactions"]) await call(read,undefined,auth,"GET",401);
+  const today = require("../semester-calendar").dayInBerlin(Date.now());
+  const date = new Date(Date.parse(today+"T12:00Z")+864e5).toISOString().slice(0,10);
+  const draft={name:"Hausabend",date,mode:"direct"};
+  await call("/api/events",draft,{}, "POST",401);
+  await call("/api/events",draft,auth,"POST",401);
+  for (const role of ["gnucash","uebersicht","schnapswart","kneipwart"]) {
+    await call("/api/admin/flags",{accountId:person.id,...Object.fromEntries(["gnucash","uebersicht","schnapswart","kneipwart"].map(r=>[r,r===role]))},admin);
+    if (["gnucash","uebersicht"].includes(role)) {
+      await call("/api/admin/accounts",undefined,auth);
+      const txs=await call("/api/admin/transactions",undefined,auth);
+      assert(txs.some(t=>t.bookingContext==="Gestern"));
+    }
+    if (role==="gnucash") { await call("/api/events",draft,auth,"POST",401); continue; }
+    for (const mode of ["direct","personal"]) {
+      const data={...draft,name:role+mode,mode};
+      const ev=await call("/api/events",data,auth);
+      await call("/api/events",data,auth,"POST",409);
+      assert((await call("/api/events/calendar")).entries.some(e=>e.id===ev.id && e.status==="upcoming"));
+      assert(!(await call("/api/events")).some(e=>e.id===ev.id));
+      await call("/api/purchase",{accountId:mode==="direct"?ev.id:person.id,eventId:mode==="personal"?ev.id:undefined,items:[{name:"Bier",qty:1}]},{}, "POST",400);
+    }
+  }
+});
+
+test("Nur während des Terminfensters buchbar, auch über Mitternacht", t=>{
+  const {bookableEvent} = require("../event-mode");
+  const event = {isEvent:true,startsAt:"2026-11-28T20:00:00.000Z",endsAt:"2026-11-29T01:00:00.000Z"};
+  const now=t.mock.method(Date,"now",()=>Date.parse(event.startsAt)-1);
+  assert.equal(bookableEvent(event),false);
+  now.mock.mockImplementation(()=>Date.parse(event.startsAt)); assert(bookableEvent(event));
+  now.mock.mockImplementation(()=>Date.parse(event.endsAt)-1); assert(bookableEvent(event));
+  assert.equal(bookableEvent({...event,calendarRemoved:true}),false);
+  now.mock.mockImplementation(()=>Date.parse(event.endsAt)); assert.equal(bookableEvent(event),false);
+});
+
+test("Bei defektem Feed bleiben letzter Terminplan und Zeitstempel erhalten",async t=>{
+  const {startCalendar} = require("../semester-calendar");
+  const db={accounts:[{id:"bestehender-termin"}],settings:{calendarSyncedAt:"2025-01-01T12:00:00.000Z"}};
+  t.mock.method(globalThis,"fetch",async()=>new Response("<html>Wartung</html>"));
+  const status=startCalendar(()=>db,()=>assert.fail("kein neuer Termin"),()=>assert.fail("kein Überschreiben"));
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(status(),{loading:false,error:true,syncedAt:"2025-01-01T12:00:00.000Z"});
+  assert.deepEqual(db.accounts,[{id:"bestehender-termin"}]);
 });

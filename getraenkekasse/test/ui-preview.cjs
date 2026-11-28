@@ -43,10 +43,14 @@ for (const [i,name] of samples.entries()) {
     db.transactions.push(entry(id+"-"+j,id,i===1?j%170:j,"purchase",j===0?4.5:1.5,descriptions[j%descriptions.length]));
   }
 }
+const {dateWindow,dayInBerlin} = require("../semester-calendar");
+for (const [id,name,offset,bookingMode] of [["plan1","Ankneipe",0,"direct"],["plan2","Sommerabend",1,"personal"],["plan3","Semesterantrittskneipe",10,"direct"],["plan4","Stiftungsfestball",-1,"personal"]]) {
+  db.accounts.push({id,name,isEvent:true,bookingMode,...dateWindow(dayInBerlin(Date.now()+offset*864e5))});
+}
 fs.writeFileSync(dbFile,JSON.stringify(db));
 for (const fixture of ["ui-fixtures.html","catalog-fixtures.html","gnucash-fixtures.html"]) {
   fs.copyFileSync(path.join(__dirname,fixture),path.join(tmp,"public",fixture));
 }
-const server=spawn(process.execPath,["update-manager/manager.js"],{cwd:tmp,env:{...process.env,BW_HOST:"127.0.0.1",BW_PORT:port,BW_ADMIN_PIN:"246810"},stdio:"inherit"});
+const server=spawn(process.execPath,["update-manager/manager.js"],{cwd:tmp,env:{...process.env,BW_HOST:"127.0.0.1",BW_PORT:port,BW_ADMIN_PIN:"246810",BW_CALENDAR_OFFLINE:process.env.BW_CALENDAR_OFFLINE || "1"},stdio:"inherit"});
 process.on("SIGTERM",()=>server.kill()); process.on("SIGINT",()=>server.kill());
 server.on("exit",code=>{fs.rmSync(tmp,{recursive:true,force:true});process.exitCode=code || 0;});

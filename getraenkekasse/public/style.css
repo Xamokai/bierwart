@@ -935,3 +935,24 @@ button:active:not(:disabled), summary:active, .pagenav a:active { box-shadow:ins
   .gnu-table td[data-label] { display:block; text-align:start; }
   .gnu-table td[data-label]::before { display:block; }
 }
+
+/* Terminplan und Buchungsdetails der Sammelkonten */
+.calendar-group { margin-block: var(--space-5); }
+.calendar-group h2, .calendar-group summary { margin: 0 0 var(--space-3); font: 600 1.25rem var(--font-display); }
+.calendar-group summary { cursor: pointer; padding-block: var(--space-2); }
+.calendar-list { display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fit,minmax(min(100%,23rem),1fr)); }
+.calendar-entry { display: flex; flex-direction: row; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line);
+  border-radius: var(--control-radius); background: var(--bg); color: var(--muted); min-width: 0; }
+.calendar-entry.bookable { border-color: var(--gold-dark); background: var(--tint); color: var(--text); text-decoration: none; }
+.calendar-entry.bookable:hover { border-color: var(--focus); }
+.calendar-date { flex: 0 0 3.25rem; text-align: center; font-variant-numeric: tabular-nums; border-inline-end: 1px solid var(--line); padding-inline-end: var(--space-3); }
+.calendar-date b { display: block; font: 600 1.5rem/1.1 var(--font-display); }
+.calendar-entry strong,.calendar-entry small,.booking-context { display: block; }
+.calendar-entry > div { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.calendar-entry small { margin-top: .15rem; font-size: .85rem; }
+.calendar-entry.bookable > span { font-size: 1.3rem; }
+.order-dialog.context-step { max-width: 28rem; }
+.context-choices { display: flex; flex-wrap: wrap; gap: var(--space-2); max-height: 30vh; overflow-y: auto; }
+.context-choices button,.context-edit { max-width: 100%; overflow-wrap: anywhere; white-space: normal; min-height: 44px; }
+.context-edit { margin-bottom: var(--space-3); }
+.compact-dialog .form-error { margin: 0; color: var(--red); }

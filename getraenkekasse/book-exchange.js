@@ -21,11 +21,12 @@ function prepareAccounts(db,g) {
     .filter(t => t.type === "purchase" && !t.exported && t.eventId && t.eventId !== t.accountId)
     .map(t => t.eventId));
   for(const a of db.accounts.filter(a=>!a.isSystem && !a.fixedBookCode && !a.collectiveTarget && (!a.deleted || neededEvents.has(a.id)))){
+    if (a.startsAt && !a.gnucashAccount && !neededEvents.has(a.id) && !db.transactions.some(t=>t.accountId===a.id && !t.exported)) continue;
     let path=a.gnucashAccount;
     if(!path){
       const base=a.isEvent?g.eventAccount:g.memberPrefix;
       const surname=a.surname||"";
-      let name=a.name.trim();
+      let name=a.startsAt ? a.name.replace(/[:\r\n]+/g," – ").trim() : a.name.trim();
       if(!a.isEvent && !name.includes(",") && surname && name.toLowerCase().endsWith(" "+surname.toLowerCase()))
         name=surname+", "+name.slice(0,-surname.length).trim();
       if(!name || /[:\r\n]/.test(name)) throw Error("Kontonamen oder Kontenzuordnung für "+a.name+" prüfen.");
@@ -241,6 +242,7 @@ function mountExchange(app,ctx) {
           {name:a.name,isEvent:true,permanent:true,customDrinks:[],createdAt:now};
         acc.id=a.id;acc.gnucashAccount=a.path;acc.bookProposed=false;
         if(a.collectiveSource)acc.collectiveSource=a.collectiveSource;
+        if(a.action==="create" && a.collectiveSource==="1800") { acc.deleted=true; acc.retiredSHV=true; }
         if(a.guid)acc.bookGuid=a.guid;
         if(a.kind==="person"){
           if(personKey(acc.name)!==personKey(a.name))acc.name=a.name;

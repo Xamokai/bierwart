@@ -39,11 +39,12 @@ function mountStockCounts(app, {getDB, allow, newId, saveDB, addAudit, loadProdu
     return Object.entries(baseSpirits).map(([name,priceCents]) => ({name,priceCents}))
       .concat(getDB().stockDrinks || []).sort((a,b) => a.name.localeCompare(b.name,"de"));
   }
-  const countableEvent = a => a.isEvent && !a.deleted && ["direct","personal"].includes(eventMode(a));
+  const countableEvent = a => a.isEvent && !a.deleted && ["direct","personal"].includes(eventMode(a)) &&
+    ((a.startsAt && !a.calendarRemoved) || (getDB().stockCounts || []).some(c=>c.eventId===a.id));
   app.get(root + "/options", guard, (req,res) => {
     const catalogs = Object.fromEntries(Object.keys(roles).filter(k => permitted(req,k)).map(k => [k,catalog(k)]));
     res.json({catalogs, canReview:permitted(req,"cash"), events:getDB().accounts.filter(countableEvent)
-      .map(a => ({id:a.id, name:eventLabel(a)})).sort((a,b) => a.name.localeCompare(b.name,"de"))});
+      .map(a => ({id:a.id, name:a.startsAt ? eventLabel(a)+" · "+new Date(a.startsAt).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"}) : eventLabel(a)})).sort((a,b) => a.name.localeCompare(b.name,"de"))});
   });
 
   app.post(root + "/drinks", allow(...roles.spirits), (req,res) => {

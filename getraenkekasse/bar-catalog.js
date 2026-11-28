@@ -1,7 +1,7 @@
 "use strict";
 
 const {categories, glasses, defaultGlass} = require("./public/bar-types");
-const {visibleEvent, eventLabel, activeDrinks} = require("./event-mode");
+const {bookableEvent, eventLabel, activeDrinks} = require("./event-mode");
 const {menuPdf} = require("./bar-pdf");
 
 function initialRecipes() {
@@ -29,8 +29,9 @@ function eventRecipes(db, event) {
 }
 function listedRecipe(db, name, event) {
   return db.barRecipes.some(r => sameName(r.name,name) && (event ? event.barRecipes?.includes(r.id) :
-    db.accounts.some(e => visibleEvent(e) && e.barRecipes?.includes(r.id))));
+    db.accounts.some(e => onProgram(e) && e.barRecipes?.includes(r.id))));
 }
+const onProgram = a => a.isEvent && !a.deleted && !a.calendarRemoved && Date.parse(a.endsAt)>Date.now();
 const offer = r => ({recipeId:r.id, name:r.name, price:r.price, category:r.category});
 function cleanString(s, max, optional=false) {
   return typeof s === "string" && (optional || !!s.trim()) && s.trim().length <= max && !/[\x00-\x1f\x7f]/.test(s);
@@ -72,7 +73,7 @@ function mountBar(app,{getDB, allow, optionalUser, saveDB, newId, parsePrice, lo
     if (req.params.id && !old) return missing(res);
     if (old && old.version !== req.body.version) return conflict(res);
     if (db.barRecipes.some(r => r !== old && sameName(r.name,recipe.name)) ||
-        (old && db.accounts.some(e => visibleEvent(e) && e.barRecipes?.includes(old.id) && nameInUse(db,e,recipe.name)))) {
+        (old && db.accounts.some(e => onProgram(e) && e.barRecipes?.includes(old.id) && nameInUse(db,e,recipe.name)))) {
       return res.status(409).json({error:"Dieser Getränkename ist bereits vergeben."});
     }
     const entry = {...recipe,id:old ? old.id : newId(),version:old ? old.version+1 : 1};
@@ -93,9 +94,14 @@ function mountBar(app,{getDB, allow, optionalUser, saveDB, newId, parsePrice, lo
     saveDB(db); res.json({ok:true});
   });
 
+  app.get("/api/bar/events",guard,(req,res)=>{
+    const db=getDB();
+    res.json(db.accounts.filter(onProgram).map(e=>({id:e.id,name:eventLabel(e),
+      startsAt:e.startsAt,barDrinks:eventRecipes(db,e).map(offer)})));
+  });
   function changeEvent(remove) {
     return (req,res) => {
-      const db = getDB(), ev = db.accounts.find(e => e.id === req.params.id && visibleEvent(e));
+      const db = getDB(), ev = db.accounts.find(e => e.id === req.params.id && onProgram(e));
       if (!ev) return missing(res);
       const recipes = selected(db,req.body?.ids);
       if (!recipes) return res.status(400).json({error:"Bitte verfügbare Getränke auswählen."});
@@ -115,7 +121,10 @@ function mountBar(app,{getDB, allow, optionalUser, saveDB, newId, parsePrice, lo
       res.json({ok:true});
     };
   }
-  app.post(eventPath,optionalUser,changeEvent(false));
+  app.post(eventPath,optionalUser,(req,res,next)=>{
+    if (bookableEvent(getDB().accounts.find(e=>e.id===req.params.id))) return next();
+    return guard(req,res,next);
+  },changeEvent(false));
   app.post(eventPath+"/remove",guard,changeEvent(true));
   async function print(req,res) {
     const db = getDB();
@@ -123,7 +132,7 @@ function mountBar(app,{getDB, allow, optionalUser, saveDB, newId, parsePrice, lo
     if (!["mixliste","preisliste"].includes(kind)) return res.status(400).json({error:"Unbekannte Druckansicht."});
     let recipes, title = "";
     if (req.params.id) {
-      const event = db.accounts.find(e => e.id === req.params.id && visibleEvent(e));
+      const event = db.accounts.find(e => e.id === req.params.id && bookableEvent(e));
       if (!event) return missing(res);
       recipes = eventRecipes(db,event); title = eventLabel(event);
     } else {

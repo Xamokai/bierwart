@@ -85,14 +85,11 @@
     <!-- Veranstaltungen -->
     <div id="tab-events" style="display:none">
       <div class="card">
-        <label>Dauerhafte Veranstaltung anlegen (immer sichtbar, bis sie gelöscht wird)</label>
-        <div class="row">
-          <input id="newEvName" class="grow" placeholder="z. B. Stiftungsfest">
-          <button class="btn gold" id="btnCreateEvAdmin">Anlegen</button>
-        </div>
+        <div class="section-head"><h2>Terminplan</h2><button class="btn gold" id="btnCreateEvAdmin">Termin anlegen</button></div>
+        <a class="back-link" href="veranstaltung.html">Zum Semesterprogramm →</a>
       </div>
       <div class="card">
-        <label>Arten für die Schnellauswahl auf der Veranstaltungsseite</label>
+        <label>Namensvorschläge für neue Termine</label>
         <div class="row" id="kindList" style="margin-bottom:10px"></div>
         <div class="row">
           <input id="newKind" class="grow" placeholder="Neue Art, z. B. Sommerfest">
@@ -102,11 +99,11 @@
       <div class="card">
         <div class="table-scroll" role="region" tabindex="0" aria-label="Veranstaltungskonten">
           <table>
-            <thead><tr><th>Veranstaltung</th><th>Angelegt</th><th>Art</th><th class="right">BW-Getränkeposten gesamt</th><th class="right">Offen in BW</th><th class="right">GnuCash-Saldo</th><th></th></tr></thead>
+            <thead><tr><th>Veranstaltung</th><th>Termin</th><th>Status</th><th class="right">BW-Getränkeposten gesamt</th><th class="right">Offen in BW</th><th class="right">GnuCash-Saldo</th><th></th></tr></thead>
             <tbody id="evTable"></tbody>
           </table>
         </div>
-        <p class="muted" style="margin-bottom:0">Temporäre Veranstaltungen verschwinden nach 1 Woche von der Veranstaltungsseite, bleiben hier aber sichtbar, bis sie gelöscht werden. Beim Löschen bleiben die Buchungen für den GnuCash-Export erhalten.</p>
+        <p class="muted" style="margin-bottom:0">Beim Löschen eines Termins bleiben seine Buchungen für den GnuCash-Export erhalten.</p>
       </div>
     </div>
 
@@ -201,7 +198,7 @@
 
 <script src="/vendor/hyphen.js"></script><script src="/vendor/hyphen-de.js"></script>
 <script src="display.js"></script>
-<script src="ui.js"></script><script src="product-editor.js"></script>
+<script src="ui.js"></script><script src="event-form.js"></script><script src="product-editor.js"></script>
 <script src="bar-types.js"></script><script src="bar-manager.js"></script>
 <script src="accounting-actions.js"></script>
 <script src="active-meal-management.js"></script>
@@ -292,11 +289,7 @@ function renderDash() {
   const q = document.getElementById("dashSearch").value.toLowerCase();
   const list = document.getElementById("dash"), pane = document.getElementById("dashDetail");
   list.replaceChildren(); pane.replaceChildren(); pane.hidden = true;
-  const byAccount = new Map();
-  for (const t of transactions) {
-    if (!byAccount.has(t.accountId)) byAccount.set(t.accountId,[]);
-    byAccount.get(t.accountId).push(t);
-  }
+  const byAccount = overviewTransactions(transactions);
   const visible = accounts.filter(a=>a.name.toLowerCase().includes(q) || a.accountNumber.toLowerCase().includes(q)).sort(compareAccounts);
   if (!visible.length) { list.textContent = "Kein Konto gefunden."; return; }
   function select(button,a,tx) {
@@ -306,7 +299,7 @@ function renderDash() {
     button.setAttribute("aria-current","true");
     pane.hidden = false;
     const title = document.createElement("h3");
-    title.textContent = a.name;
+    title.textContent = overviewName(a);
     pane.replaceChildren(title);
     appendAccountHistory(pane,tx,eur);
   }
@@ -315,7 +308,7 @@ function renderDash() {
     const tx = byAccount.get(a.id) || [];
     const spent = tx.filter(t=>t.type==="purchase").reduce((sum,t)=>sum+t.total,0);
     const kind = a.mode==="collective" ? "Sammelkonto" : a.mode==="hidden" ? "Buchhaltung" : a.isEvent ? "Veranstaltung" : "";
-    const heading = `<strong>${displayText(a.accountNumber ? a.accountNumber+" · "+a.name : a.name)}</strong>
+    const heading = `<strong>${displayText(a.accountNumber ? a.accountNumber+" · "+overviewName(a) : overviewName(a))}</strong>
       <span class="account-kind">${displayText(kind)}</span>`;
     const totals = eventBalanceLabel(a,eur) || `Käufe ${eur(spent)} · Guthaben <b class="${a.balance < 0 ? "amount-neg" : "amount-pos"}">${eur(a.balance)}</b>`;
     if (wideOverview.matches) {
@@ -409,8 +402,8 @@ function renderEvents() {
   const evs = accounts.filter(a => a.mode === "personal" || a.mode === "direct");
   document.getElementById("evTable").innerHTML = evs.map(a => `
     <tr><td>${displayText(a.eventLabel || a.name)} · ${a.mode === "personal" ? "Personenstrichliste" : "Direktbuchung"}</td>
-    <td class="muted">${a.createdAt ? new Date(a.createdAt).toLocaleDateString("de-DE") : "–"}</td>
-    <td class="muted">${a.permanent ? "dauerhaft" : "temporär (1 Woche auf der Seite)"}</td>
+    <td class="muted">${a.startsAt ? new Date(a.startsAt).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"}) : "–"}</td>
+    <td class="muted">${a.calendarRemoved ? "Entfallen" : !a.startsAt ? "Ohne Termin" : Date.parse(a.endsAt)<=Date.now() ? "Beendet" : Date.parse(a.startsAt)>Date.now() ? "Geplant" : "Jetzt buchbar"}</td>
     <td class="right">${eur(a.eventTurnover)}</td>
     <td class="right">${eur(a.eventPending)}</td>
     <td class="right">${a.eventBookBalance === null ? "–" : eur(a.eventBookBalance) +
@@ -434,13 +427,7 @@ function renderEvents() {
     renderEvents();
   });
 }
-document.getElementById("btnCreateEvAdmin").onclick = async () => {
-  const r = await fetch("/api/events", { method: "POST", headers: H(), body: JSON.stringify({ name: document.getElementById("newEvName").value }) });
-  const d = await r.json();
-  if (!r.ok) return toast(d.error);
-  document.getElementById("newEvName").value = "";
-  toast("Dauerhafte Veranstaltung angelegt ✓"); refreshAll();
-};
+mountEventForm(document.getElementById("btnCreateEvAdmin"),H,refreshAll);
 document.getElementById("btnAddKind").onclick = async () => {
   const r = await fetch("/api/admin/eventkinds", { method: "POST", headers: H(), body: JSON.stringify({ name: document.getElementById("newKind").value }) });
   const d = await r.json();

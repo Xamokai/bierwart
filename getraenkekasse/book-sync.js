@@ -35,7 +35,7 @@ function planAccounts(book,db,g) {
   for(const a of input){
     const d=descriptor(a,g);
     const uniqueCode=counts.get(d.kind+":"+d.code)===1;
-    const pool=db.accounts.filter(x=>!x.isSystem && Boolean(x.isEvent)===(d.kind!=="person") &&
+    const pool=db.accounts.filter(x=>!x.isSystem && !x.startsAt && Boolean(x.isEvent)===(d.kind!=="person") &&
       (x.collectiveSource ? x.collectiveSource===d.collectiveSource : !x.fixedBookCode && !x.collectiveTarget));
     const reserved=pool.find(x=>x.bookProposed && x.gnucashAccount!==d.path && parent(x.gnucashAccount)===parent(d.path) && codeOf(x.gnucashAccount)===d.code);
     if(reserved)conflicts.push("Nummer "+d.code+" auch für "+reserved.name+" vorgemerkt. Vor dem BW-Export dessen Kontenzuordnung korrigieren.");
@@ -56,7 +56,7 @@ function planAccounts(book,db,g) {
       else if(matches.every(x=>x.gnucashAccount===d.path))matches=[]; // add one canonical event in addition to register shortcuts
     }
     const match=matches[0];
-    if(matches.length>1 || (match && ((match.deleted && !match.collectiveSource) || used.has(match.id))) || (!match && db.accounts.some(x=>norm(x.name)===norm(d.name)))){
+    if(matches.length>1 || (match && ((match.deleted && !match.collectiveSource) || used.has(match.id))) || (!match && db.accounts.some(x=>!x.startsAt && norm(x.name)===norm(d.name)))){
       conflicts.push(d.path+" (Name oder Zuordnung nicht eindeutig)");continue;
     }
     const id=match?.id || digest(["book-account",d.path]).slice(0,24);

@@ -71,14 +71,14 @@ function mountBarManager(root, headers) {
   async function refresh() {
     const stamp=++revision;
     try {
-      const [rows,parties]=await Promise.all([BW.api("/api/bar/recipes",{headers:headers(),cache:"no-store"}),BW.api("/api/events")]);
+      const [rows,parties]=await Promise.all([BW.api("/api/bar/recipes",{headers:headers(),cache:"no-store"}),BW.api("/api/bar/events",{headers:headers()})]);
       if (stamp!==revision) return;
       recipes=rows;events=parties;
       const previous=picker.value;
       const groups = groupEventsByTheme(events).map(([theme, entries]) => {
         const group = document.createElement("optgroup");
         group.label = theme;
-        group.append(...entries.map(e => new Option(e.name, e.id)));
+        group.append(...entries.map(e => new Option(e.name+" · "+new Date(e.startsAt).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"}),e.id)));
         return group;
       });
       picker.replaceChildren(new Option("Veranstaltung wählen",""), ...groups);

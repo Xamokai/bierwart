@@ -121,7 +121,7 @@ async function run() {
     }
     console.log("Grenzfälle: leer, ein Eintrag, 1.001 Buchungen, langer Text, Millionenbetrag, 320 px und 200 % Schrift");
     for (const [person,permissions] of [
-      ["Jo",[]],["Lea Wagner",["secStock","debtMails","secGnu","secAudit"]],
+      ["Jo",[]],["Lea Wagner",["secDash","secStock","debtMails","secGnu","secAudit"]],
       ["Paul Steiner",["secDash","secStock","secProd"]],["Đặng Thị Ngọc Hân",["secStock"]],
       ["Seán O'Brien-Ó Súilleabháin",["secBar","secStock"]]
     ]) {
@@ -160,12 +160,16 @@ async function run() {
     await k.locator("#prodGrid .drink-add").first().click();
     await Promise.all([k.waitForResponse(r=>r.url().endsWith("/api/purchase")&&r.ok()),k.click("#btnBook")]);
     await k.click("#btnBarCard");await k.locator("dialog[open] .bar-list input").first().waitFor();await k.keyboard.press("Escape");
-    await k.goto(base+"/veranstaltung.html");await k.click("#btnNewEv");await k.fill("#evNewName","Sommerabend "+suffix);
-    await k.click("#sheet button[type=submit]");await k.waitForURL("**/strichliste.html?event=*");
+    await k.goto(base+"/veranstaltung.html");
+    assert(await k.locator("#btnNewEv").isHidden());
+    await k.goto(base+"/user.html"); await k.fill("#loginName","Paul Steiner"); await k.fill("#loginPw","Probe"); await k.click("#btnLogin"); await k.locator("#meName").waitFor();
+    await k.goto(base+"/veranstaltung.html"); await k.click("#btnNewEv"); await k.fill("#evNewName","Sommerabend "+suffix);
+    await k.locator("dialog[open] [type=submit]").click();
+    await k.getByRole("link",{name:new RegExp("Sommerabend "+suffix)}).click(); await k.waitForURL("**/strichliste.html?event=*");
     await k.fill("#search","Marlene");await k.locator("#names .tile").first().click();await k.locator("#sheet .drink-add").first().click();
     await Promise.all([k.waitForResponse(r=>r.url().endsWith("/api/purchase")&&r.ok()),k.click("#btnBook")]);
     await fit(k);
-    await k.goto(base+"/user.html");await k.fill("#loginName","Testkonto "+suffix);await k.fill("#loginPw","Probe");await k.click("#btnLogin");
+    await k.goto(base+"/user.html");await k.click("#btnLogout");await k.fill("#loginName","Testkonto "+suffix);await k.fill("#loginPw","Probe");await k.click("#btnLogin");
     await k.click("#initialNotice summary");await k.click("#changeInitial");
     await k.fill("#pwOld","Probe");await k.fill("#pwNew","EigenesPasswort");await k.fill("#pwNew2","EigenesPasswort");await k.click("#btnPw");
     await k.locator("#initialNotice").waitFor({state:"hidden"});await k.click("#btnLogout");
@@ -192,7 +196,7 @@ async function run() {
     await d.setViewportSize({width:390,height:844});
     const f=d.locator(".stock-form");
     await f.locator('[name=area]').selectOption("drinks");
-    await f.locator('[name=scope]').selectOption("event");await f.locator('[name=eventId]').selectOption({label:"Ankneipe"});
+    await f.locator('[name=scope]').selectOption("event");await f.locator('[name=eventId]').selectOption("plan1");
     await f.locator('[name=title]').fill("Zählprobe "+suffix);await f.locator('[data-add="Bier"]').click();await f.locator("[data-qty]").fill("6");
     await f.locator('[type=submit]').click();
     const record=d.locator(".stock-record").filter({hasText:"Zählprobe "+suffix}).first();

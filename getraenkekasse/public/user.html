@@ -35,7 +35,7 @@
     <button id="accountMore" class="btn" type="button" aria-expanded="false" aria-haspopup="dialog" aria-controls="moreDialog"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#ellipsis"></use></svg><span class="nav-label">Mehr</span></button>
     <div id="moreViews">
     <button type="button" class="btn" aria-controls="emailPanel passwordPanel"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#settings"></use></svg><span class="nav-label">Kontoeinstellungen</span></button>
-    <button type="button" class="btn" aria-controls="secDash"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#layout-dashboard"></use></svg><span class="nav-label">Kontenübersicht (BW)</span></button>
+    <button type="button" class="btn" aria-controls="secDash"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#layout-dashboard"></use></svg><span class="nav-label">Kontenübersicht</span></button>
     <button type="button" class="btn" aria-controls="secBar"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#martini"></use></svg><span class="nav-label">Getränkekarten (SW)</span></button>
     <button type="button" class="btn" aria-controls="secStock"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#clipboard-list"></use></svg><span class="nav-label">Auszählungen</span></button>
     <button type="button" class="btn" aria-controls="secProd"><svg class="nav-icon" aria-hidden="true" focusable="false"><use xlink:href="icons/navigation.svg#tags"></use></svg><span class="nav-label">Produkte &amp; Preise (BW)</span></button>
@@ -102,7 +102,7 @@
 
     <!-- Nur sichtbar mit Rolle BW: Übersicht aller Konten -->
     <details class="daygroup" id="secDash" style="display:none">
-      <summary><strong>Übersicht (BW)</strong><span class="muted">▾</span></summary>
+      <summary><strong>Kontenübersicht</strong><span class="muted">▾</span></summary>
       <div class="body">
         <div class="row" style="margin:8px 0 12px">
           <input id="roleDashSearch" class="grow" type="search" placeholder="Name oder Kontonummer …">
@@ -482,11 +482,13 @@ function applyRoles() {
   if (barPanel.hidden && barPanel.open) { barPanel.open = false; barManager.reset(); }
   mailPanel.hidden = !roles.gnucash;
   if (!roles.gnucash) { mailPanel.open = false; debtMails.clear(); }
-  document.getElementById("secDash").style.display = roles.uebersicht ? "" : "none";
+  document.getElementById("secDash").style.display = roles.uebersicht || roles.gnucash ? "" : "none";
   document.getElementById("secProd").style.display = roles.uebersicht ? "" : "none";
   document.getElementById("secAudit").style.display = roles.gnucash ? "" : "none";
   document.getElementById("secGnu").style.display = roles.gnucash ? "" : "none";
-  if (roles.uebersicht) { loadRoleDash(); productEditor.load(products); }
+  if (roles.uebersicht || roles.gnucash) loadRoleDash();
+  if (roles.uebersicht) productEditor.load(products);
+  for (const id of ["btnNegPdf","btnBackupTally"]) document.getElementById(id).hidden = !roles.uebersicht;
   if (roles.gnucash && userMealManager) userMealManager.refresh();
   if (roles.gnucash && userAuditLog) userAuditLog.refresh();
   if (roles.gnucash) {
@@ -508,18 +510,17 @@ function renderRoleDash() {
   const q = (document.getElementById("roleDashSearch").value || "").toLowerCase();
   const el = document.getElementById("roleDash");
   el.innerHTML = "";
-  const byAcc = {};
-  roleTx.forEach(t => (byAcc[t.accountId] = byAcc[t.accountId] || []).push(t));
+  const byAcc = overviewTransactions(roleTx);
   roleAccounts.filter(a => a.name.toLowerCase().includes(q) || a.accountNumber.includes(q)).sort(compareAccounts).forEach(a => {
-    const tx = byAcc[a.id] || [];
+    const tx = byAcc.get(a.id) || [];
     const det = document.createElement("details");
     det.className = "daygroup";
-    det.innerHTML = `<summary><span>${a.accountNumber ? displayText(a.accountNumber) + " · " : ""}${displayText(a.name)}${a.mode === "collective" ? " · Sammelkonto" : a.mode === "hidden" ? " · Buchhaltung" : a.isEvent ? " · Veranstaltung" : ""}</span>
+    det.innerHTML = `<summary><span>${a.accountNumber ? displayText(a.accountNumber) + " · " : ""}${displayText(overviewName(a))}${a.mode === "collective" ? " · Sammelkonto" : a.mode === "hidden" ? " · Buchhaltung" : a.isEvent ? " · Veranstaltung" : ""}</span>
       ${eventBalanceLabel(a, eur) ? `<span>${eventBalanceLabel(a, eur)}</span>` :
         `<span class="${a.balance >= 0 ? "amount-pos" : "amount-neg"}">${eur(a.balance)}</span>`}</summary>
       <div class="body"></div>`;
     const body = det.querySelector(".body");
-    if (a.mode === "direct" || a.mode === "personal") {
+    if (me?.roles?.uebersicht && (a.mode === "direct" || a.mode === "personal")) {
       const del = document.createElement("button");
       del.className = "btn small";
       del.style.margin = "8px 0";

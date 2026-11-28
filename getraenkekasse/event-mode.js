@@ -30,6 +30,7 @@ function normalizedName(value) {
 function eventMode(a) {
   if (!a.isEvent) return "person";
   if (a.isCollective || a.collectiveSource) return "collective";
+  if (["personal","direct"].includes(a.bookingMode)) return a.bookingMode;
   const leaf = (a.gnucashAccount || "").split(":").at(-1);
   const name = normalizedName(a.name);
   const mappedName = normalizedName(leaf);
@@ -41,13 +42,12 @@ function eventMode(a) {
 function eventLabel(a) {
   return (a.isEvent || a.kind === "event") && a.name === "Stiftungsfest" ? "Stiftungsfestball" : a.name;
 }
-function visibleEvent(a) {
-  if (!a || !a.isEvent || a.deleted) return false;
-  const mode = eventMode(a);
-  return (mode === "direct" || mode === "personal") &&
-    (a.permanent || Date.parse(a.createdAt) >= Date.now() - 7 * 864e5);
+function bookableEvent(a) {
+  if (!a?.isEvent || a.deleted || a.calendarRemoved || !a.startsAt) return false;
+  const now = Date.now();
+  return Date.parse(a.startsAt) <= now && now < Date.parse(a.endsAt);
 }
 function activeDrinks(event) {
   return (event.customDrinks || []).filter(d => !d.expiresAt || Date.parse(d.expiresAt) > Date.now());
 }
-module.exports = {eventMode, eventLabel, tallyLabel, visibleEvent, activeDrinks, normalizedName};
+module.exports = {eventMode, eventLabel, tallyLabel, bookableEvent, activeDrinks, normalizedName};

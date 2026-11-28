@@ -39,7 +39,7 @@ Unter **Verwaltung → Software-Updates** das Repository auswählen, **Nach Upda
 
 Beim Laden läuft die Kasse weiter. Vor dem Wechsel schließt sie laufende Anfragen ab und sichert `data`, `assets` und `config.json` unter `getraenkekasse/.bierwart/backups/`. Dann startet sie die gewählte Version und prüft die Konten- und Produkt-API. Erst danach nimmt sie wieder Buchungen an. Eine fehlgeschlagene Aktivierung stellt den unmittelbar zuvor gesicherten Bestand wieder her. Der nächste Start verarbeitet auch einen durch Stromausfall unterbrochenen Wechsel.
 
-Ein bewusst gewählter Rückwechsel verwendet **den aktuellen Kassenbestand**. Bereits gebuchte Striche bleiben erhalten. Die Version muss das Datenformat der Installation unterstützen. Die Versionen 1.10.1 bis 1.13.2 verwenden Format 1. Künftige Releases mit anderem Format benötigen eine eigene Datenmigration.
+Ein bewusst gewählter Rückwechsel verwendet **den aktuellen Kassenbestand**. Bereits gebuchte Striche bleiben erhalten. Die Version muss das Datenformat der Installation unterstützen. Die Versionen 1.10.1 bis 1.14.0 verwenden Format 1. Künftige Releases mit anderem Format benötigen eine eigene Datenmigration.
 
 Mitglieder melden sich nach dem Neustart erneut an. Der direkte Verwaltungslink `/updates/` funktioniert auch bei einer älteren Kassenoberfläche und bei einem Startfehler der Kasse. Die Zugangsdaten entsprechen der Verwaltungs-PIN. Sicherungen und lokale Programmversionen bleiben bis zur manuellen Bereinigung auf dem Server. Den Datenordner zusätzlich wie bisher auch außerhalb des Servers sichern.
 

@@ -6,7 +6,8 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const {eventMode, eventLabel, tallyLabel, visibleEvent, activeDrinks, normalizedName} = require("./event-mode");
+const calendar = require("./semester-calendar");
+const {eventMode, eventLabel, tallyLabel, bookableEvent, activeDrinks, normalizedName} = require("./event-mode");
 const {initialRecipes, eventRecipes, listedRecipe, offer, mountBar} = require("./bar-catalog");
 const splitActiveMeal = require("./public/meal-allocation");
 const {mailProfile, validAddress, nameParts, draftFor} = require("./debt-mail");
@@ -356,6 +357,29 @@ function migrateCollectiveAccounts() {
   db.settings.collectiveAccounts114 = true;
   saveDB(db);
 }
+function updateCollectiveAccounts() {
+  if (db.settings.collectiveBookingDetails) return;
+  for (const a of db.accounts.filter(a=>a.isEvent && tallyLabel(a)==="SHV")) {
+    a.deleted = true;
+    a.retiredSHV = true;
+  }
+  for (const name of ["Gast","Arbeitseinsatz"]) {
+    if (db.accounts.some(a=>a.isEvent && (a.collectiveSource===collectiveSources[name] || tallyLabel(a)===name))) continue;
+    db.accounts.push({id:newId(), name:name==="Gast" ? "Gast / Mitgliederwerbung" : name, isEvent:true, permanent:true,
+      collectiveSource:collectiveSources[name], fixedBookCode:collectiveSources[name], createdAt:new Date().toISOString()});
+  }
+  for (const a of db.accounts.filter(a=>!a.deleted && eventMode(a)==="collective" && tallyLabel(a)==="Couleur")) a.contextKind = "name";
+  db.settings.collectiveBookingDetails = true;
+  saveDB(db);
+}
+
+function contextLabel(a) {
+  if (eventMode(a) !== "collective") return null;
+  if (a.collectiveSource === "4620" || tallyLabel(a) === "Arbeitseinsatz") return "Arbeitseinsatz";
+  if (a.contextKind === "name" || a.collectiveSource === "4730" || ["Gast","Couleur"].includes(tallyLabel(a))) return "Name";
+  return null;
+}
+
 /* ---------- Produkte aus CSV (assets/res/products.csv) ---------- */
 function parsePrice(s) {
   const value = String(s ?? "").trim().replace(",", ".");
@@ -415,6 +439,8 @@ app.use(express.static(path.join(ROOT, "public")));
 ensureSeedEvents();
 ensureEventTemplates();
 migrateCollectiveAccounts();
+updateCollectiveAccounts();
+const calendarStatus = calendar.startCalendar(()=>db,newId,saveDB);
 
 function requirePin(req, res, next) {
   if (req.get("X-Admin-Pin") === ADMIN_PIN) return next();
@@ -495,7 +521,7 @@ app.get("/api/accounts", (req, res) => {
 app.get("/api/tally/accounts", (req, res) => {
   const eventId = req.query.event;
   const event = eventId && db.accounts.find(a => a.id === eventId);
-  if (eventId && (!visibleEvent(event) || eventMode(event) !== "personal"))
+  if (eventId && (!bookableEvent(event) || eventMode(event) !== "personal"))
     return res.status(404).json({error:"Diese Veranstaltungsstrichliste ist nicht verfügbar."});
   res.json(tallyAccounts(event));
 });
@@ -518,10 +544,23 @@ function tallyAccounts(event) {
     const name = tallyLabel(a);
     const group = collective ? "collective" : a.priority ? "priority" : latest.has(a.id) ? "recent" : "other";
     accounts.push({id:a.id, name, fullName:name !== a.name ? a.name : undefined, group,
-      priority:!!a.priority || collective, activeLast24Hours:latest.get(a.id) >= now - 864e5});
+      contextLabel:contextLabel(a), priority:!!a.priority || collective, activeLast24Hours:latest.get(a.id) >= now - 864e5});
   }
   return accounts.sort((a,b) => ranks[a.group] - ranks[b.group] || a.name.localeCompare(b.name, "de"));
 }
+
+app.get("/api/tally/accounts/:id/contexts", (req,res) => {
+  const account = activeCollective(req.params.id);
+  if (!account || !contextLabel(account)) return res.status(404).json({error:"Konto nicht verfügbar."});
+  const now = Date.now(), recent = new Map();
+  for (const tx of db.transactions) {
+    if (tx.accountId !== account.id || !tx.bookingContext) continue;
+    const time = Date.parse(tx.date), key = tx.bookingContext.toLocaleLowerCase("de");
+    if (time > now-864e5 && time <= now && (!recent.has(key) || time > recent.get(key).time))
+      recent.set(key,{name:tx.bookingContext,time});
+  }
+  res.json([...recent.values()].sort((a,b)=>b.time-a.time).map(r=>r.name));
+});
 
 app.post("/api/accounts", (req, res) => {
   const name = String(req.body.name || "").trim();
@@ -702,12 +741,16 @@ app.post("/api/purchase", optionalUser, (req, res) => {
   const acc = db.accounts.find(a => a.id === req.body.accountId && !a.deleted && !a.isSystem);
   if (!acc) return res.status(404).json({ error: "Konto nicht gefunden" });
   const mode = eventMode(acc);
-  if (mode === "personal" || mode === "hidden" || (mode === "direct" && !visibleEvent(acc)))
+  if (mode === "personal" || mode === "hidden" || (mode === "direct" && !bookableEvent(acc)))
     return res.status(400).json({error:"Für diesen Anlass ist keine Direktbuchung möglich."});
+  const label = contextLabel(acc);
+  const bookingContext = label && typeof req.body.bookingContext === "string" ? req.body.bookingContext.trim().normalize("NFC") : "";
+  if (label && (!bookingContext || bookingContext.length > 120 || /[\x00-\x1f]/.test(bookingContext)))
+    return res.status(400).json({error:label + " mit höchstens 120 Zeichen eingeben."});
   let event = mode === "direct" ? acc : null;
   if (req.body.eventId) {
     event = db.accounts.find(a => a.id === req.body.eventId);
-    if (!visibleEvent(event) || eventMode(event) !== "personal" || acc.isEvent)
+    if (!bookableEvent(event) || eventMode(event) !== "personal" || acc.isEvent)
       return res.status(400).json({error:"Bitte eine gültige Veranstaltung und ein Personenkonto auswählen."});
   }
   const pool = loadProducts().concat(activeDrinks(db.settings), event ? activeDrinks(event) : [], eventRecipes(db,event).map(offer));
@@ -726,6 +769,7 @@ app.post("/api/purchase", optionalUser, (req, res) => {
   const tx = {
     id: newId(), accountId: acc.id, type: "purchase",
     date: new Date().toISOString(), items, total,
+    ...(bookingContext ? {bookingContext} : {}),
     ...(event ? {eventId:event.id, eventName:eventLabel(event)} : {}),
     description: (req.body.eventId ? eventLabel(event) + " · " : "") + items.map(i => `${i.qty}x ${i.name}`).join(", "),
     exported: false
@@ -1165,34 +1209,34 @@ app.get("/api/admin/backup-tally.ods", allow("uebersicht"), (req, res) => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
-/* Sichtbar auf der Veranstaltungsseite: permanente immer,
- * temporäre nur 7 Tage nach Anlage. Admin/BW/XXX sehen alle weiterhin. */
 require("./stock-counts").mountStockCounts(app,{getDB:()=>db, allow, newId, saveDB, addAudit, loadProducts, validDateOnly, eventMode, eventLabel, parseMoneyCents});
 mountBar(app,{getDB:()=>db, allow, optionalUser, saveDB, newId, parsePrice, loadProducts, addAudit});
-app.get("/api/events", (req, res) => {
-  res.json(db.accounts.filter(visibleEvent)
-    .map(a => ({id:a.id, name:eventLabel(a), mode:eventMode(a), permanent:!!a.permanent, customDrinks:activeDrinks(a), barDrinks:eventRecipes(db,a).map(offer)}))
-    .sort((a, b) => (b.permanent - a.permanent) || a.name.localeCompare(b.name, "de")));
+function eventView(a) {
+  return {id:a.id, name:eventLabel(a), mode:eventMode(a), startsAt:a.startsAt, endsAt:a.endsAt, allDay:a.allDay,
+    customDrinks:activeDrinks(a), barDrinks:eventRecipes(db,a).map(offer)};
+}
+app.get("/api/events", (req,res) => res.json(db.accounts.filter(bookableEvent).map(eventView)));
+app.get("/api/events/calendar", optionalUser, (req,res) => {
+  const now = Date.now(), first = calendar.semesterStart(now);
+  const entries = db.accounts.filter(a=>a.isEvent && !a.deleted && !a.calendarRemoved && a.startsAt &&
+    calendar.dayInBerlin(Date.parse(a.endsAt)-1)>=first).map(a=>({
+      id:a.id, name:eventLabel(a), mode:eventMode(a), startsAt:a.startsAt, endsAt:a.endsAt, allDay:a.allDay,
+      status:Date.parse(a.startsAt)>now ? "upcoming" : Date.parse(a.endsAt)<=now ? "past" : "active"
+    })).sort((a,b)=>a.startsAt.localeCompare(b.startsAt) || a.name.localeCompare(b.name,"de"));
+  const roles = req.account?.roles || {};
+  res.json({entries,canCreate:!!(roles.uebersicht || roles.schnapswart || roles.kneipwart),...calendarStatus()});
 });
-
-/* Anlegen: mit Admin-PIN -> permanent; ohne -> temporär (1 Woche sichtbar) */
-app.post("/api/events", (req, res) => {
-  const name = String(req.body.name || "").trim();
-  if (!name) return res.status(400).json({ error: "Name fehlt" });
-  if (["hidden","collective"].includes(eventMode({name,isEvent:true})))
-    return res.status(400).json({error:"Dieser Eintrag ist keine Veranstaltung."});
-  if (db.accounts.some(a => !a.deleted && [a.name,eventLabel(a)].some(n => n.toLowerCase() === name.toLowerCase())))
-    return res.status(409).json({ error: "Name existiert bereits" });
-  const isAdmin = req.get("X-Admin-Pin") === ADMIN_PIN;
-  const ev = { id: newId(), name, isEvent: true, permanent: isAdmin && req.body.permanent !== false, customDrinks: [], createdAt: new Date().toISOString() };
-  if (!isAdmin) ev.permanent = false;
+app.post("/api/events", allow("uebersicht","schnapswart","kneipwart"), (req,res) => {
+  const {date,mode} = req.body, name = typeof req.body.name === "string" ? req.body.name.trim() : "";
+  if (!name || name.length > 120 || /[\r\n]/.test(name) || !validDateOnly(date) || !["direct","personal"].includes(mode))
+    return res.status(400).json({error:"Bitte Namen, Datum und Buchungsart angeben."});
+  if (db.accounts.some(a=>!a.deleted && !a.calendarRemoved && a.startsAt && normalizedName(a.name)===normalizedName(name) && calendar.dayInBerlin(a.startsAt)===date))
+    return res.status(409).json({error:"Diesen Termin gibt es an diesem Tag bereits."});
+  const ev = {...calendar.newEvent(db,name,mode,newId),...calendar.dateWindow(date)};
   db.accounts.push(ev);
-  addAudit(req, "event.created", `Veranstaltung „${ev.name}“ angelegt`,
-    { type: "event", id: ev.id, label: ev.name }, null,
-    { name: ev.name, permanent: ev.permanent }, null,
-    isAdmin ? null : { type: "tally", accountId: null, name: "Veranstaltungsseite" });
+  addAudit(req,"event.created","Veranstaltung „"+name+"“ angelegt",{type:"event",id:ev.id,label:name},null,{name,date,mode});
   saveDB(db);
-  res.json({ id: ev.id, name: ev.name, permanent: ev.permanent, customDrinks: [] });
+  res.json(eventView(ev));
 });
 
 /* Zeitlich begrenzter Zusatz zur Getränkekarte für beide Strichlisten und Direktbuchungen. */
@@ -1205,7 +1249,7 @@ app.post("/api/temporary-drinks", (req, res) => {
   const drinks = activeDrinks(db.settings);
   if (listedRecipe(db,name) || drinks.concat(loadProducts()).some(drink => drink.name === name))
     return res.status(409).json({error:"Ein Getränk mit diesem Namen ist bereits verfügbar."});
-  const event = db.accounts.find(a => visibleEvent(a) && activeDrinks(a).some(drink => drink.name === name));
+  const event = db.accounts.find(a => bookableEvent(a) && activeDrinks(a).some(drink => drink.name === name));
   if (event)
     return res.status(409).json({error:`„${name}“ ist bereits bei „${eventLabel(event)}“ angelegt.`});
   const drink = {name, price, expiresAt:new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()};
@@ -1230,7 +1274,7 @@ app.post("/api/temporary-drinks/remove", (req, res) => {
 /* Temporäres "Getränk" (z. B. Cocktail) nur mit Name + Preis, je Veranstaltung */
 app.post("/api/events/:id/drinks", (req, res) => {
   const ev = db.accounts.find(a => a.id === req.params.id && a.isEvent && !a.deleted);
-  if (!visibleEvent(ev)) return res.status(404).json({ error: "Veranstaltung nicht verfügbar" });
+  if (!bookableEvent(ev)) return res.status(404).json({ error: "Veranstaltung nicht verfügbar" });
   const name = String(req.body.name || "").trim();
   const price = parsePrice(req.body.price);
   if (!name || name.length > 120 || !Number.isFinite(price) || price <= 0)
@@ -1249,7 +1293,7 @@ app.post("/api/events/:id/drinks", (req, res) => {
 
 app.post("/api/events/:id/drinks/remove", (req, res) => {
   const ev = db.accounts.find(a => a.id === req.params.id && a.isEvent && !a.deleted);
-  if (!visibleEvent(ev)) return res.status(404).json({ error: "Veranstaltung nicht verfügbar" });
+  if (!bookableEvent(ev)) return res.status(404).json({ error: "Veranstaltung nicht verfügbar" });
   const removed = (ev.customDrinks || []).find(d => d.name === req.body.name) || null;
   ev.customDrinks = (ev.customDrinks || []).filter(d => d.name !== req.body.name);
   if (removed) addAudit(req, "event.drink_removed", `Getränk „${removed.name}“ aus „${ev.name}“ entfernt`,
@@ -1325,16 +1369,16 @@ function adminAccountNumber(account) {
   return bookCode(path);
 }
 
-app.get("/api/admin/accounts", allow("uebersicht"), (req, res) => {
+app.get("/api/admin/accounts", allow("uebersicht","gnucash"), (req, res) => {
   const totals = eventTotals();
   const snapshot = db.settings.eventBookBalances;
   res.json(db.accounts
-    .filter(a => !a.deleted)
+    .filter(a => !a.deleted || (a.retiredSHV && db.transactions.some(t=>t.accountId===a.id)))
     .map(a => {
       const mode = eventMode(a);
       const result = {...accountView(a), accountNumber:adminAccountNumber(a), hasPassword:!!a.passwordHash, initialPassword:!!a.initialPassword,
         priority:!!a.priority, roles:a.roles || {}, isEvent:!!a.isEvent, mode, eventLabel:eventLabel(a),
-        isSystem:!!a.isSystem, systemKind:a.systemKind || null, permanent:!!a.permanent, createdAt:a.createdAt};
+        isSystem:!!a.isSystem, systemKind:a.systemKind || null, permanent:!!a.permanent, createdAt:a.createdAt, startsAt:a.startsAt, endsAt:a.endsAt, calendarRemoved:!!a.calendarRemoved};
       if (mode !== "direct" && mode !== "personal") return result;
       const amounts = totals.get(a.id);
       const bookBalance = snapshot && Object.hasOwn(snapshot.balances, a.gnucashAccount)
@@ -1415,7 +1459,7 @@ app.get("/api/admin/audit-log", allow("gnucash"), (req, res) => {
   res.json({ total: entries.length, entries: entries.slice(0, limit) });
 });
 
-app.get("/api/admin/transactions", allow("uebersicht"), (req, res) => {
+app.get("/api/admin/transactions", allow("uebersicht","gnucash"), (req, res) => {
   const byName = Object.fromEntries(db.accounts.map(a => [a.id, a.name]));
   const tx = db.transactions
     .map(t => ({ ...t, accountName: byName[t.accountId] || "?" }))
@@ -1679,6 +1723,7 @@ function saveCollective(req,res) {
     a.isCollective = true;
     a.name = name;
   }
+  if (contextLabel(a)==="Name") a.contextKind = "name";
   a.collectiveTarget = target;
   if (!account) db.accounts.push(a);
   const after = collectiveView(a);
@@ -1699,7 +1744,7 @@ app.delete(collectivesUrl + "/:id", allow("gnucash"), (req,res) => {
   res.json({ok:true});
 });
 app.get("/api/admin/gnucash/accounts",allow("gnucash"),(req,res) => {
-  res.json(assignableAccounts().map(a=>({id:a.id, name:a.name, isEvent:!!a.isEvent, custom:a.collectiveTarget || a.gnucashAccount || "", path:gnucashAccountPath(a)})));
+  res.json(assignableAccounts().map(a=>({id:a.id, name:a.startsAt ? a.name+" · "+calendar.dayInBerlin(a.startsAt).split("-").reverse().join(".") : a.name, isEvent:!!a.isEvent, custom:a.collectiveTarget || a.gnucashAccount || "", path:gnucashAccountPath(a)})));
 });
 app.put("/api/admin/gnucash/accounts/:id",allow("gnucash"),(req,res) => {
   const a = assignableAccounts().find(a=>a.id===req.params.id);
